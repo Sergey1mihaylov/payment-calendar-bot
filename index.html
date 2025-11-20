@@ -32,67 +32,66 @@
     color:#0b1226;
   }
 
-  /* Use large viewport units for height to fit screen exactly */
+  /* Use large viewport units when available */
   .app {
-    width: 100vw;
-    height: 100vh;
-    box-sizing: border-box;
+    width:100%;
+    min-height:100svh; /* best on most modern browsers */
+    height:100dvh; /* fallback to cover device height */
+    box-sizing:border-box;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     padding: 12px;
-    overflow: hidden;
   }
 
   /* Shell card */
   .shell {
-    width: 100%;
-    max-width: 980px;
-    height: 100%;
+    width:100%;
+    max-width:980px;
+    height:100%;
     border-radius: 18px;
     background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,250,252,0.88));
     box-shadow: var(--shadow-lg);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    position:relative;
   }
 
   /* Header */
   .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-    gap: 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 18px;
+    gap:12px;
     border-bottom: 1px solid rgba(11,18,38,0.04);
     background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
-    flex-shrink: 0;
   }
-  .brand { font-weight: 800; font-size: 17px; }
-  .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .brand { font-weight:800; font-size:17px; }
+  .sub { font-size:13px; color:var(--muted); margin-top:4px; }
 
   /* Content area - two screens */
   .content {
-    flex: 1 1 auto;
-    display: flex;
-    overflow: hidden;
-    position: relative;
+    flex:1 1 auto;
+    display:flex;
+    overflow:hidden;
+    position:relative;
   }
 
   .screen {
-    width: 100%;
-    height: 100%;
-    flex: 0 0 100%;
+    width:100%;
+    height:100%;
+    flex:0 0 100%;
     transition: transform 360ms cubic-bezier(.2,.9,.2,1);
-    overflow: auto;
+    overflow:auto;
     -webkit-overflow-scrolling: touch;
-    padding: 18px;
-    box-sizing: border-box;
+    padding:18px;
+    box-sizing:border-box;
   }
 
   .screen.hidden-left { transform: translateX(-100%); }
@@ -100,112 +99,108 @@
 
   /* SCREEN 1 — selector */
   .selector {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
   }
 
   .panel {
     background: linear-gradient(180deg,#fff,#fbfdff);
-    border-radius: 14px;
-    padding: 14px;
+    border-radius:14px;
+    padding:14px;
     box-shadow: var(--shadow-sm);
   }
 
   .months-grid {
-    display: grid;
+    display:grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap:10px;
   }
   .month-card {
-    padding: 12px;
-    border-radius: 10px;
-    text-align: center;
-    font-weight: 800;
-    cursor: pointer;
-    user-select: none;
-    background: transparent;
+    padding:12px;
+    border-radius:10px;
+    text-align:center;
+    font-weight:800;
+    cursor:pointer;
+    user-select:none;
+    background:transparent;
     transition: transform 180ms, box-shadow 160ms, background 180ms;
   }
   .month-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(12,18,30,0.06); }
   .month-card.active {
     background: linear-gradient(90deg,var(--accent),var(--accent-2));
-    color: #fff;
+    color:#fff;
     transform: translateY(-6px);
     box-shadow: 0 18px 40px rgba(10,132,255,0.14);
   }
 
-  .year-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .year-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
   .year-chip {
-    padding: 8px 12px; border-radius: 12px;
-    background: linear-gradient(180deg,#fff,#f4f6fb);
-    cursor: pointer; font-weight: 800;
+    padding:8px 12px; border-radius:12px;
+    background:linear-gradient(180deg,#fff,#f4f6fb);
+    cursor:pointer; font-weight:800;
     box-shadow: 0 8px 22px rgba(12,18,30,0.04);
   }
-  .year-chip.active { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color: #fff; transform: translateY(-3px); }
+  .year-chip.active { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; transform: translateY(-3px); }
 
   .open-btn {
-    margin-top: 12px;
-    padding: 14px 18px;
-    font-weight: 800;
-    border-radius: 14px;
-    border: none;
+    margin-top:12px;
+    padding:14px 18px;
+    font-weight:800;
+    border-radius:14px;
+    border:none;
     background: linear-gradient(90deg,var(--accent),var(--accent-2));
-    color: #fff;
-    cursor: pointer;
+    color:#fff;
+    cursor:pointer;
     box-shadow: 0 18px 40px rgba(10,132,255,0.14);
   }
 
   /* SCREEN 2 — calendar */
   .cal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-    flex-shrink: 0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:10px;
   }
-  .cal-controls { display: flex; gap: 8px; align-items: center; }
+  .cal-controls { display:flex; gap:8px; align-items:center; }
   .small-btn {
-    padding: 8px 10px; border-radius: 10px; border: none; cursor: pointer; background: linear-gradient(180deg,#fff,#f4f6fb); box-shadow: var(--shadow-sm); font-weight: 800;
+    padding:8px 10px; border-radius:10px; border:none; cursor:pointer; background:linear-gradient(180deg,#fff,#f4f6fb); box-shadow: var(--shadow-sm); font-weight:800;
   }
 
-  .month-title { font-weight: 800; font-size: 16px; }
+  .month-title { font-weight:800; font-size:16px; }
 
   .main-pane {
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-    height: calc(100% - 56px); /* header height approx */
-    overflow: hidden;
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
   }
 
   .calendar {
-    flex: 1;
-    min-width: 0;
+    flex:1;
+    min-width:0;
     background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(248,249,252,0.7));
-    border-radius: 12px;
-    padding: 10px;
+    border-radius:12px;
+    padding:10px;
     box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    overflow-y: auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
   }
 
-  .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 6px 6px; }
-  .weekday { text-align: center; font-weight: 800; color: var(--muted); font-size: 12px; }
+  .weekdays { display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; padding:6px 6px; }
+  .weekday { text-align:center; font-weight:800; color:var(--muted); font-size:12px; }
 
-  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding: 6px; }
+  .days { display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; padding:6px; }
   .day {
-    aspect-ratio: 1 / 1; min-height: 52px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 10px; font-weight: 800; color: #0b1226;
-    cursor: pointer; user-select: none; position: relative; transition: transform 240ms, box-shadow 200ms;
-    background: transparent;
+    aspect-ratio:1/1; min-height:52px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:10px; font-weight:800; color:#0b1226;
+    cursor:pointer; user-select:none; position:relative; transition: transform 240ms, box-shadow 200ms;
+    background:transparent;
   }
   .day:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(12,18,30,0.06); }
-  .other { color: #b7bcc1; cursor: default; transform: none; box-shadow: none; font-weight: 700; }
+  .other { color:#b7bcc1; cursor:default; transform:none; box-shadow:none; font-weight:700; }
 
   .today {
     background: linear-gradient(180deg, rgba(10,132,255,0.12), rgba(10,132,255,0.06));
@@ -214,100 +209,99 @@
   }
 
   /* colored states */
-  .color-red { background: linear-gradient(180deg,var(--clr-red), #e03a34); color: #fff; box-shadow: 0 18px 42px rgba(255,59,48,0.14); }
-  .color-yellow { background: linear-gradient(180deg,var(--clr-yellow), #f2b800); color: #111; box-shadow: 0 18px 42px rgba(255,204,0,0.12); }
-  .color-green { background: linear-gradient(180deg,var(--clr-green), #2fb84a); color: #fff; box-shadow: 0 18px 42px rgba(52,199,89,0.12); }
-  .color-purple { background: linear-gradient(180deg,var(--clr-purple), #9b3bd6); color: #fff; box-shadow: 0 18px 42px rgba(175,82,222,0.12); }
+  .color-red { background: linear-gradient(180deg,var(--clr-red), #e03a34); color:#fff; box-shadow: 0 18px 42px rgba(255,59,48,0.14); }
+  .color-yellow { background: linear-gradient(180deg,var(--clr-yellow), #f2b800); color:#111; box-shadow: 0 18px 42px rgba(255,204,0,0.12); }
+  .color-green { background: linear-gradient(180deg,var(--clr-green), #2fb84a); color:#fff; box-shadow: 0 18px 42px rgba(52,199,89,0.12); }
+  .color-purple { background: linear-gradient(180deg,var(--clr-purple), #9b3bd6); color:#fff; box-shadow: 0 18px 42px rgba(175,82,222,0.12); }
 
   /* sidebar mini months + years */
   .sidebar {
-    width: 220px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    overflow-y: auto;
+    width:220px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
   }
   .mini-year {
-    background: linear-gradient(180deg,#fff,#fbfcff);
-    padding: 10px; border-radius: 12px;
+    background:linear-gradient(180deg,#fff,#fbfcff);
+    padding:10px; border-radius:12px;
     box-shadow: var(--shadow-sm);
-    display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+    display:grid; grid-template-columns: repeat(3,1fr); gap:8px;
   }
-  .mini-month { text-align: center; padding: 8px; font-weight: 800; border-radius: 10px; cursor: pointer; }
-  .mini-month.active { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color: #fff; transform: translateY(-3px); box-shadow: 0 12px 30px rgba(10,132,255,0.12); }
+  .mini-month { text-align:center; padding:8px; font-weight:800; border-radius:10px; cursor:pointer; }
+  .mini-month.active { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; transform: translateY(-3px); box-shadow: 0 12px 30px rgba(10,132,255,0.12); }
 
-  .year-list { display: flex; gap: 8px; flex-wrap: wrap; }
-  .year-chip { padding: 8px 10px; border-radius: 10px; background: linear-gradient(180deg,#fff,#f4f6fb); cursor: pointer; font-weight: 800; }
-  .year-chip.active { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color: #fff; transform: translateY(-3px); }
+  .year-list { display:flex; gap:8px; flex-wrap:wrap; }
+  .year-chip { padding:8px 10px; border-radius:10px; background:linear-gradient(180deg,#fff,#f4f6fb); cursor:pointer; font-weight:800; }
+  .year-chip.active { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; transform: translateY(-3px); }
 
   /* footer */
-  .cal-footer { margin-top: 8px; display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; color: var(--muted); font-size: 13px; flex-shrink: 0; }
+  .cal-footer { margin-top:8px; display:flex; justify-content:space-between; align-items:center; padding:8px 4px; color:var(--muted); font-size:13px; }
 
   /* sheet */
   .backdrop {
-    position: fixed; inset: 0; z-index: 1400; background: rgba(8,10,20,0.28);
-    opacity: 0; pointer-events: none; transition: opacity 220ms;
+    position:fixed; inset:0; z-index:1400; background:rgba(8,10,20,0.28); opacity:0; pointer-events:none; transition: opacity 220ms;
   }
-  .backdrop.show { opacity: 1; pointer-events: auto; }
+  .backdrop.show { opacity:1; pointer-events:auto; }
 
   .sheet {
-    position: fixed; left: 50%; bottom: 0; z-index: 1401;
+    position:fixed; left:50%; bottom:0; z-index:1401;
     transform: translate(-50%, 110%);
-    width: 100%; max-width: 720px;
+    width:100%; max-width:720px;
     border-radius: 16px 16px 6px 6px;
     background: linear-gradient(180deg, var(--card), #fbfdff);
     box-shadow: 0 40px 80px rgba(12,18,30,0.2);
     transition: transform 320ms cubic-bezier(.2,.9,.2,1), opacity 260ms;
-    opacity: 0;
-    padding: 12px 14px 18px;
+    opacity:0;
+    padding:12px 14px 18px;
     touch-action: none;
-    max-height: 86vh;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow: auto;
+    max-height: 86svh;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    overflow:auto;
   }
-  .sheet.show { transform: translate(-50%, 0%); opacity: 1; }
+  .sheet.show { transform: translate(-50%, 0%); opacity:1; }
 
-  .grab { width: 64px; height: 6px; background: rgba(11,18,38,0.08); border-radius: 999px; margin: 6px auto 4px; }
+  .grab { width:64px; height:6px; background:rgba(11,18,38,0.08); border-radius:999px; margin:6px auto 4px; }
 
-  .palette { display: flex; gap: 10px; align-items: center; }
+  .palette { display:flex; gap:10px; align-items:center; }
   .palette .color {
-    width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-sm);
+    width:44px; height:44px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; box-shadow: var(--shadow-sm);
   }
-  .palette .color .dot { width: 28px; height: 28px; border-radius: 8px; }
+  .palette .color .dot { width:28px; height:28px; border-radius:8px; }
   .pal-red .dot { background: linear-gradient(180deg,var(--clr-red), #e03a34); }
   .pal-yellow .dot { background: linear-gradient(180deg,var(--clr-yellow), #f2b800); }
   .pal-green .dot { background: linear-gradient(180deg,var(--clr-green), #2fb84a); }
   .pal-purple .dot { background: linear-gradient(180deg,var(--clr-purple), #9b3bd6); }
 
   .desc {
-    width: 100%;
-    min-height: 72px; /* at least ~2 lines */
-    max-height: 220px;
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid rgba(11,18,38,0.06);
-    font-size: 15px;
-    resize: vertical;
-    background: linear-gradient(180deg,#fff,#fbfdff);
+    width:100%;
+    min-height:72px; /* at least ~2 lines */
+    max-height:220px;
+    padding:12px;
+    border-radius:12px;
+    border:1px solid rgba(11,18,38,0.06);
+    font-size:15px;
+    resize:vertical;
+    background:linear-gradient(180deg,#fff,#fbfdff);
     box-shadow: inset 0 -1px 0 rgba(0,0,0,0.02);
   }
 
-  .sheet-actions { display: flex; gap: 10px; justify-content: flex-end; }
-  .act-del { padding: 10px 12px; border-radius: 12px; background: transparent; border: 1px solid rgba(11,18,38,0.06); font-weight: 800; cursor: pointer; color: var(--muted); }
-  .act-save { padding: 10px 12px; border-radius: 12px; background: linear-gradient(90deg,var(--accent),var(--accent-2)); color: #fff; font-weight: 900; cursor: pointer; box-shadow: 0 12px 30px rgba(10,132,255,0.14); }
+  .sheet-actions { display:flex; gap:10px; justify-content:flex-end; }
+  .act-del { padding:10px 12px; border-radius:12px; background:transparent; border:1px solid rgba(11,18,38,0.06); font-weight:800; cursor:pointer; color:var(--muted); }
+  .act-save { padding:10px 12px; border-radius:12px; background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; font-weight:900; cursor:pointer; box-shadow: 0 12px 30px rgba(10,132,255,0.14); }
 
   /* small screens */
-  @media (max-width: 880px){
-    .sidebar { width: 100%; order: 2; }
-    .main-pane { flex-direction: column; height: auto; }
-    .sheet { max-width: 100%; border-radius: 12px 12px 0 0; left: 50%; }
+  @media (max-width:880px){
+    .sidebar { width:100%; order:2; }
+    .main-pane { flex-direction:column; }
+    .sheet { max-width:100%; border-radius: 12px 12px 0 0; left:50%; }
   }
 
   @media (prefers-reduced-motion: reduce){
-    * { transition: none !important; animation: none !important; }
+    * { transition:none !important; animation:none !important; }
   }
+
 </style>
 </head>
 <body>
@@ -363,252 +357,489 @@
             </div>
           </div>
 
-          <div class="main-pane" style="height: calc(100% - 56px);">
-            <div class="calendar" id="calendar">
-              <div class="weekdays">
-                <div class="weekday">Пн</div>
-                <div class="weekday">Вт</div>
-                <div class="weekday">Ср</div>
-                <div class="weekday">Чт</div>
-                <div class="weekday">Пт</div>
-                <div class="weekday">Сб</div>
-                <div class="weekday">Вс</div>
-              </div>
+          <div class="main-pane" style="align-items:flex-start;">
+            <div class="calendar" id="calendarPane" aria-live="polite">
+              <div class="weekdays" id="weekdays"></div>
               <div class="days" id="daysGrid"></div>
+              <div class="cal-footer">
+                <div>Клик — открыть лист. Сохранено локально.</div>
+                <div><button id="gotoSelected" class="small-btn">Перейти к выбранной дате</button></div>
+              </div>
             </div>
 
-            <div class="sidebar" id="sidebar">
-              <!-- Мини-календари по годам и месяцам (если нужно) -->
-            </div>
-          </div>
+            <aside class="sidebar" aria-hidden="false">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:800">Выбрать месяц</div>
+                <div style="color:var(--muted);font-size:13px">2025 — 2030</div>
+              </div>
 
-          <div class="cal-footer">
-            <div>© 2025</div>
-            <button id="toSelectBtn" class="small-btn">Выбрать месяц</button>
+              <div class="mini-year" id="miniYear"></div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="font-weight:700">Годы</div>
+                <div class="year-list" id="yearList"></div>
+              </div>
+
+            </aside>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-<script>
-  const YEARS = [2025,2026,2027,2028,2029,2030];
-  const MONTHS = [
-    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-  ];
+  <!-- bottom sheet -->
+  <div id="backdrop" class="backdrop" aria-hidden="true"></div>
+  <div id="sheet" class="sheet" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="grab" aria-hidden="true"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-weight:900" id="sheetTitle">Дата</div>
+      <div id="sheetColorLabel" style="color:var(--muted);font-weight:800">Цвет</div>
+    </div>
 
-  // Элементы
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="palette" id="palette">
+        <button class="color pal-red" data-color="red" title="Красный"><span class="dot"></span></button>
+        <button class="color pal-yellow" data-color="yellow" title="Жёлтый"><span class="dot"></span></button>
+        <button class="color pal-green" data-color="green" title="Зелёный"><span class="dot"></span></button>
+        <button class="color pal-purple" data-color="purple" title="Фиолетовый"><span class="dot"></span></button>
+      </div>
+
+      <textarea id="desc" class="desc" placeholder="Описание — 2–4 строки..."></textarea>
+
+      <div class="sheet-actions">
+        <button id="delBtn" class="act-del">Удалить</button>
+        <button id="saveBtn" class="act-save">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* Single-file app JS
+   - Range 2025..2030
+   - localStorage key: paymentCalendar.highlights
+   - Bottom-sheet variant D (sheet slides from bottom)
+*/
+
+(function(){
+  const MIN_YEAR = 2025, MAX_YEAR = 2030;
+  const STORAGE_KEY = 'paymentCalendar.highlights';
+  const locale = 'ru-RU';
+  const weekStartMonday = true;
+
+  // elements
   const screenSelect = document.getElementById('screenSelect');
   const screenCalendar = document.getElementById('screenCalendar');
-  const toSelectorBtn = document.getElementById('toSelector');
-  const toSelectBtn = document.getElementById('toSelectBtn');
+  const toSelector = document.getElementById('toSelector');
   const openCalendarBtn = document.getElementById('openCalendar');
-  const yearRow = document.getElementById('yearRow');
+
   const monthsGrid = document.getElementById('monthsGrid');
-  const monthTitle = document.getElementById('monthTitle');
-  const daysGrid = document.getElementById('daysGrid');
+  const yearRow = document.getElementById('yearRow');
+
   const yearSelect = document.getElementById('yearSelect');
-  const prevMonthBtn = document.getElementById('prevMonth');
-  const nextMonthBtn = document.getElementById('nextMonth');
+  const monthTitle = document.getElementById('monthTitle');
+  const prevMonth = document.getElementById('prevMonth');
+  const nextMonth = document.getElementById('nextMonth');
+  const daysGrid = document.getElementById('daysGrid');
+  const weekdaysEl = document.getElementById('weekdays');
 
-  let currentYear = new Date().getFullYear();
-  let currentMonth = new Date().getMonth();
+  const miniYear = document.getElementById('miniYear');
+  const yearList = document.getElementById('yearList');
+  const gotoSelected = document.getElementById('gotoSelected');
 
-  if (!YEARS.includes(currentYear)) currentYear = YEARS[0];
+  // sheet
+  const backdrop = document.getElementById('backdrop');
+  const sheet = document.getElementById('sheet');
+  const sheetTitle = document.getElementById('sheetTitle');
+  const palette = document.getElementById('palette');
+  const desc = document.getElementById('desc');
+  const saveBtn = document.getElementById('saveBtn');
+  const delBtn = document.getElementById('delBtn');
 
-  // Init years selector
-  function renderYearRow() {
-    yearRow.innerHTML = '';
-    YEARS.forEach(y => {
-      const btn = document.createElement('button');
-      btn.textContent = y;
-      btn.className = 'year-chip';
-      if (y === currentYear) btn.classList.add('active');
-      btn.addEventListener('click', () => {
-        currentYear = y;
-        updateYearSelection();
-        updateMonthsSelection();
+  // state
+  const today = new Date();
+  let view = { year: Math.max(MIN_YEAR, Math.min(MAX_YEAR, today.getFullYear())), month: today.getMonth() };
+  if (view.year < MIN_YEAR) view = { year: MIN_YEAR, month: 0 };
+  if (view.year > MAX_YEAR) view = { year: MAX_YEAR, month: 11 };
+
+  let selectedCellEl = null;
+  let activeKey = null;
+  let highlights = loadHighlights();
+
+  // utilities
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function ymd(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+  function parseYmd(s){ const [y,mm,d] = s.split('-').map(Number); return new Date(y, mm-1, d); }
+  function clearChildren(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+
+  // storage
+  function loadHighlights(){ try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : {}; } catch(e){ return {}; } }
+  function saveHighlights(){ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(highlights)); } catch(e){} }
+
+  // build selector screen
+  function buildMonths(){
+    const names = Array.from({length:12}, (_,i)=> new Date(2000,i,1).toLocaleString(locale,{ month:'short' }).replace('.',''));
+    clearChildren(monthsGrid);
+    names.forEach((nm,i)=>{
+      const el = document.createElement('div');
+      el.className = 'month-card' + (i===view.month ? ' active' : '');
+      el.textContent = nm;
+      el.addEventListener('click', ()=> {
+        view.month = i;
+        updateMonthsUI();
       });
-      yearRow.appendChild(btn);
+      monthsGrid.appendChild(el);
     });
   }
 
-  function updateYearSelection() {
-    [...yearRow.children].forEach(btn => {
-      btn.classList.toggle('active', +btn.textContent === currentYear);
-    });
-    [...yearSelect.options].forEach(opt => {
-      opt.selected = (+opt.value === currentYear);
-    });
+  function updateMonthsUI(){
+    const nodes = monthsGrid.querySelectorAll('.month-card');
+    nodes.forEach((n,idx)=> n.classList.toggle('active', idx===view.month));
   }
 
-  // Init months selector
-  function renderMonthsGrid() {
-    monthsGrid.innerHTML = '';
-    MONTHS.forEach((m,i) => {
-      const div = document.createElement('div');
-      div.textContent = m;
-      div.className = 'month-card';
-      if (i === currentMonth) div.classList.add('active');
-      div.addEventListener('click', () => {
-        currentMonth = i;
-        updateMonthsSelection();
-      });
-      monthsGrid.appendChild(div);
-    });
+  function buildYearRow(){
+    clearChildren(yearRow);
+    for(let y=MIN_YEAR;y<=MAX_YEAR;y++){
+      const el = document.createElement('div');
+      el.className = 'year-chip' + (y===view.year ? ' active' : '');
+      el.textContent = y;
+      el.addEventListener('click', ()=> { view.year = y; updateYearRow(); updateMonthsUI(); });
+      yearRow.appendChild(el);
+    }
+  }
+  function updateYearRow(){
+    const chips = yearRow.querySelectorAll('.year-chip');
+    chips.forEach(c => c.classList.toggle('active', Number(c.textContent)===view.year));
   }
 
-  function updateMonthsSelection() {
-    [...monthsGrid.children].forEach((el,i) => {
-      el.classList.toggle('active', i === currentMonth);
-    });
+  // navigation between screens
+  function showScreen(which){
+    if (which === 'select'){
+      screenSelect.classList.remove('hidden-left'); screenSelect.classList.remove('hidden-right');
+      screenCalendar.classList.add('hidden-right');
+    } else {
+      // show calendar
+      screenSelect.classList.add('hidden-left');
+      screenCalendar.classList.remove('hidden-right');
+      screenCalendar.classList.remove('hidden-left');
+    }
   }
 
-  // Year select dropdown in calendar screen
-  function renderYearSelect() {
-    yearSelect.innerHTML = '';
-    YEARS.forEach(y => {
-      const opt = document.createElement('option');
-      opt.value = y;
-      opt.textContent = y;
-      if (y === currentYear) opt.selected = true;
-      yearSelect.appendChild(opt);
-    });
-  }
-
-  yearSelect.addEventListener('change', e => {
-    currentYear = +e.target.value;
-    renderCalendar(currentYear, currentMonth);
-    updateYearSelection();
-    updateMonthsSelection();
+  toSelector.addEventListener('click', ()=> showScreen('select'));
+  openCalendarBtn.addEventListener('click', ()=> {
+    // ensure view.year valid
+    if (view.year < MIN_YEAR) view.year = MIN_YEAR;
+    if (view.year > MAX_YEAR) view.year = MAX_YEAR;
+    setupCalendar();
+    showScreen('calendar');
   });
 
-  // Calendar rendering
-  function renderCalendar(year, month) {
-    monthTitle.textContent = `${MONTHS[month]} ${year}`;
-    daysGrid.innerHTML = '';
+  // calendar building
+  function buildWeekdays(){
+    clearChildren(weekdaysEl);
+    const names = [];
+    for(let i=0;i<7;i++){
+      const d = new Date(1970,0,4 + i + (weekStartMonday?1:0));
+      names.push(d.toLocaleString(locale,{ weekday: 'short' }).replace('.',''));
+    }
+    const order = weekStartMonday ? [1,2,3,4,5,6,0] : [0,1,2,3,4,5,6];
+    order.forEach(idx => {
+      const el = document.createElement('div'); el.className='weekday'; el.textContent = names[idx]; weekdaysEl.appendChild(el);
+    });
+  }
 
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
+  function setupCalendar(){
+    // fill year select, mini year, year list
+    buildYearSelect();
+    buildMiniYear();
+    buildYearList();
+    renderMonth(view.year, view.month);
+    buildWeekdays();
+  }
+
+  function renderMonth(y,m){
+    monthTitle.textContent = new Date(y,m,1).toLocaleString(locale,{ month:'long', year:'numeric' }).replace(/\u00A0/g,' ');
+    yearSelect.value = y;
+    clearChildren(daysGrid);
+
+    const firstDay = new Date(y,m,1);
+    const lastDay = new Date(y,m+1,0);
     const daysInMonth = lastDay.getDate();
+    const startWeekday = firstDay.getDay();
+    const leading = weekStartMonday ? (startWeekday === 0 ? 6 : startWeekday - 1) : startWeekday;
+    const prevLast = new Date(y,m,0).getDate();
 
-    // День недели первого дня (понедельник=0)
-    let startWeekDay = firstDay.getDay() - 1;
-    if (startWeekDay < 0) startWeekDay = 6; // Воскресенье — последний день
-
-    // Дни предыдущего месяца для заполнения пустот в календаре
-    let prevMonthDays = [];
-    if (startWeekDay > 0) {
-      const prevMonthLastDay = new Date(year, month, 0).getDate();
-      for(let i = startWeekDay - 1; i >= 0; i--) {
-        prevMonthDays.push(prevMonthLastDay - i);
-      }
+    for(let i=0;i<leading;i++){
+      const d = prevLast - (leading - 1 - i);
+      const el = document.createElement('div'); el.className='day other'; el.textContent = d; daysGrid.appendChild(el);
     }
+    for(let d=1; d<=daysInMonth; d++){
+      const el = document.createElement('div'); el.className='day'; el.textContent = d; el.tabIndex=0;
+      const dt = new Date(y,m,d);
+      const key = ymd(y,m,d);
+      // apply highlight
+      if (highlights[key]) {
+        applyHighlight(el, highlights[key]);
+      }
+      // today
+      if (dt.getFullYear()===today.getFullYear() && dt.getMonth()===today.getMonth() && dt.getDate()===today.getDate()){
+        el.classList.add('today'); el.title = 'Сегодня';
+      }
+      el.addEventListener('click', (ev)=> {
+        ev.stopPropagation();
+        selectedCellEl = el;
+        activeKey = key;
+        openSheetFor(key);
+      });
+      daysGrid.appendChild(el);
+    }
+    // trailing
+    const total = leading + daysInMonth;
+    const trailing = (7*6) - total;
+    for(let i=1;i<=trailing;i++){
+      const el = document.createElement('div'); el.className='day other'; el.textContent = i; daysGrid.appendChild(el);
+    }
+  }
 
-    // Дни следующего месяца чтобы заполнить до конца недели
-    const totalCells = 42; // 6 недель по 7 дней
-    const nextMonthDaysCount = totalCells - (prevMonthDays.length + daysInMonth);
+  function applyHighlight(cellEl, data){
+    // clear
+    cellEl.classList.remove('color-red','color-yellow','color-green','color-purple');
+    if (!data || !data.color) return;
+    cellEl.classList.add('color-'+data.color);
+    if (data.note) cellEl.setAttribute('title', data.note);
+  }
 
-    // Сегодня для подсветки
-    const today = new Date();
-    const isCurrentMonth = (today.getFullYear() === year) && (today.getMonth() === month);
-    const todayDate = isCurrentMonth ? today.getDate() : -1;
+  function clearHighlight(cellEl){
+    cellEl.classList.remove('color-red','color-yellow','color-green','color-purple');
+    cellEl.removeAttribute('title');
+  }
 
-    // Рисуем дни предыдущего месяца
-    prevMonthDays.forEach(d => {
-      const div = document.createElement('div');
-      div.textContent = d;
-      div.className = 'day other';
-      daysGrid.appendChild(div);
+  // build selects and mini views
+  function buildYearSelect(){
+    clearChildren(yearSelect);
+    for(let y=MIN_YEAR; y<=MAX_YEAR; y++){
+      const opt = document.createElement('option'); opt.value=y; opt.textContent=y; yearSelect.appendChild(opt);
+    }
+    yearSelect.value = view.year;
+    yearSelect.addEventListener('change', ()=> {
+      view.year = Number(yearSelect.value); renderMonth(view.year, view.month); refreshMiniYear(); highlightYearChip();
+    });
+  }
+
+  function buildMiniYear(){
+    clearChildren(miniYear);
+    const months = Array.from({length:12}, (_,i)=> new Date(2000,i,1).toLocaleString(locale,{ month:'short' }).replace('.',''));
+    months.forEach((mName,i)=>{
+      const el = document.createElement('div'); el.className='mini-month'; el.textContent = mName;
+      el.addEventListener('click', ()=> { view.month = i; renderMonth(view.year, view.month); refreshMiniYear(); });
+      miniYear.appendChild(el);
+    });
+    refreshMiniYear();
+  }
+  function refreshMiniYear(){
+    const nodes = miniYear.querySelectorAll('.mini-month'); nodes.forEach((n,idx)=> n.classList.toggle('active', idx===view.month));
+  }
+
+  function buildYearList(){
+    clearChildren(yearList);
+    for(let y=MIN_YEAR;y<=MAX_YEAR;y++){
+      const el = document.createElement('div'); el.className='year-chip'; el.textContent=y;
+      el.addEventListener('click', ()=> { view.year = y; yearSelect.value = y; renderMonth(view.year, view.month); refreshMiniYear(); highlightYearChip(); });
+      yearList.appendChild(el);
+    }
+    highlightYearChip();
+  }
+  function highlightYearChip(){
+    const chips = yearList.querySelectorAll('.year-chip'); chips.forEach(c=> c.classList.toggle('active', Number(c.textContent)===view.year));
+  }
+
+  // prev/next month
+  prevMonth.addEventListener('click', ()=> {
+    view.month--; if (view.month<0) { view.year--; view.month=11; if (view.year<MIN_YEAR) { view.year=MIN_YEAR; view.month=0; } }
+    renderMonth(view.year, view.month); yearSelect.value=view.year; refreshMiniYear(); highlightYearChip();
+  });
+  nextMonth.addEventListener('click', ()=> {
+    view.month++; if (view.month>11) { view.year++; view.month=0; if (view.year>MAX_YEAR){ view.year=MAX_YEAR; view.month=11; } }
+    renderMonth(view.year, view.month); yearSelect.value=view.year; refreshMiniYear(); highlightYearChip();
+  });
+
+  // goto selected date
+  gotoSelected.addEventListener('click', ()=> {
+    if (!activeKey) { alert('Сначала выберите дату в календаре.'); return; }
+    const d = parseYmd(activeKey); view.year = d.getFullYear(); view.month = d.getMonth(); renderMonth(view.year, view.month); yearSelect.value=view.year; refreshMiniYear(); highlightYearChip();
+  });
+
+  // sheet behavior
+  function openSheetFor(key){
+    const d = parseYmd(key);
+    sheetTitle.textContent = d.toLocaleDateString(locale,{ day:'numeric', month:'long', year:'numeric' }).replace(/\u00A0/g,' ');
+    const existing = highlights[key] || { color:null, note:'' };
+    // set palette active
+    Array.from(palette.children).forEach(btn => btn.classList.toggle('selected', btn.dataset.color===existing.color));
+    desc.value = existing.note || '';
+    sheet._chosen = existing.color || null;
+    backdrop.classList.add('show'); backdrop.setAttribute('aria-hidden','false');
+    sheet.classList.add('show'); sheet.setAttribute('aria-hidden','false');
+    setTimeout(()=> desc.focus(), 260);
+  }
+
+  function closeSheet(){
+    sheet.classList.remove('show'); sheet.setAttribute('aria-hidden','true');
+    backdrop.classList.remove('show'); backdrop.setAttribute('aria-hidden','true');
+    sheet._chosen = null; selectedCellEl = null; activeKey = null;
+  }
+
+  // palette clicks
+  Array.from(palette.children).forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const color = btn.dataset.color;
+      sheet._chosen = color;
+      Array.from(palette.children).forEach(b=> b.classList.toggle('active', b===btn));
+      // visual feedback
+      btn.animate([{ transform:'scale(1.06)'},{ transform:'scale(1)' }], { duration:200, easing:'cubic-bezier(.2,.9,.2,1)' });
+    });
+  });
+
+  // save
+  saveBtn.addEventListener('click', ()=> {
+    if (!activeKey) {
+      // if not set, try to set from selectedCellEl (rare)
+      if (!selectedCellEl) { closeSheet(); return; }
+    }
+    // activeKey must be set earlier
+    if (!activeKey) {
+      // attempt to compute from selectedCellEl text and view
+      // skip — safe guard
+      closeSheet(); return;
+    }
+    const note = desc.value.trim();
+    const color = sheet._chosen || null;
+    if (!color && !note) {
+      if (highlights[activeKey]) { delete highlights[activeKey]; saveHighlights(); }
+      if (selectedCellEl) clearHighlight(selectedCellEl);
+      // bounce nothing
+      closeSheet(); return;
+    }
+    highlights[activeKey] = { color, note };
+    saveHighlights();
+    // apply to DOM if visible
+    if (selectedCellEl) {
+      applyHighlight(selectedCellEl, highlights[activeKey]);
+      // spring animation
+      selectedCellEl.animate([
+        { transform:'scale(1.06) translateY(-6px)' },
+        { transform:'scale(0.98) translateY(3px)' },
+        { transform:'scale(1) translateY(0)' }
+      ], { duration:520, easing:'cubic-bezier(.2,.9,.2,1)' });
+    } else {
+      renderMonth(view.year, view.month);
+    }
+    closeSheet();
+  });
+
+  // delete
+  delBtn.addEventListener('click', ()=>{
+    if (!activeKey) { closeSheet(); return; }
+    if (highlights[activeKey]) { delete highlights[activeKey]; saveHighlights(); }
+    if (selectedCellEl) { clearHighlight(selectedCellEl); selectedCellEl.animate([{ opacity:0.6 },{ opacity:1 }], { duration:240 }); }
+    desc.value=''; sheet._chosen=null; Array.from(palette.children).forEach(b=> b.classList.remove('active'));
+    closeSheet();
+  });
+
+  // close on backdrop / escape
+  backdrop.addEventListener('click', ()=> closeSheet());
+  document.addEventListener('keydown', (e)=> { if (e.key==='Escape') closeSheet(); });
+
+  // sheet drag-to-dismiss (basic)
+  (function(){
+    let dragging=false, startY=0, startTransform=0;
+    sheet.addEventListener('pointerdown', (e)=> {
+      dragging=true; startY=e.clientY; sheet.setPointerCapture(e.pointerId);
+    });
+    sheet.addEventListener('pointermove', (e)=> {
+      if (!dragging) return;
+      const dy = Math.max(0, e.clientY - startY);
+      const pct = Math.min(1, dy / sheet.offsetHeight);
+      sheet.style.transform = `translate(-50%, ${pct*100}%)`;
+      backdrop.style.opacity = `${1 - Math.min(1, pct*1.2)}`;
+    });
+    sheet.addEventListener('pointerup', (e)=> {
+      if (!dragging) return;
+      dragging=false; sheet.releasePointerCapture(e.pointerId);
+      const dy = Math.max(0, e.clientY - startY);
+      if (dy > sheet.offsetHeight * 0.2) {
+        closeSheet();
+        sheet.style.transform=''; backdrop.style.opacity='';
+      } else {
+        sheet.style.transition='transform 220ms cubic-bezier(.2,.9,.2,1)';
+        sheet.style.transform='translate(-50%, 0%)';
+        backdrop.style.transition='opacity 220ms';
+        backdrop.style.opacity='1';
+        setTimeout(()=> { sheet.style.transition=''; sheet.style.transform=''; backdrop.style.transition=''; backdrop.style.opacity=''; }, 260);
+      }
+    });
+    sheet.addEventListener('pointercancel', ()=> { dragging=false; sheet.style.transform=''; backdrop.style.opacity=''; });
+  })();
+
+  // init selector UI and calendar
+  function init(){
+    // build months and years on selector screen
+    const monthNames = Array.from({length:12}, (_,i)=> new Date(2000,i,1).toLocaleString(locale,{ month:'short' }).replace('.',''));
+    monthNames.forEach((nm,i)=>{
+      const el = document.createElement('div'); el.className='month-card'; el.textContent=nm;
+      el.addEventListener('click', ()=> { view.month = i; updateSelectorActive(); });
+      monthsGrid.appendChild(el);
     });
 
-    // Рисуем дни текущего месяца
-    for(let d=1; d<=daysInMonth; d++) {
-      const div = document.createElement('div');
-      div.textContent = d;
-      div.className = 'day';
-      if (d === todayDate) div.classList.add('today');
-      daysGrid.appendChild(div);
+    for(let y=MIN_YEAR;y<=MAX_YEAR;y++){
+      const el = document.createElement('div'); el.className='year-chip'; el.textContent=y;
+      el.addEventListener('click', ()=> { view.year=y; updateSelectorActive(); });
+      yearRow.appendChild(el);
     }
+    updateSelectorActive();
 
-    // Дни следующего месяца
-    for(let d=1; d<=nextMonthDaysCount; d++) {
-      const div = document.createElement('div');
-      div.textContent = d;
-      div.className = 'day other';
-      daysGrid.appendChild(div);
-    }
+    // show initial screen
+    showScreen('select');
   }
 
-  // Навигация между месяцами
-  prevMonthBtn.addEventListener('click', () => {
-    if (currentMonth === 0) {
-      if (YEARS.indexOf(currentYear) > 0) {
-        currentYear = YEARS[YEARS.indexOf(currentYear)-1];
-        currentMonth = 11;
-      }
-    } else {
-      currentMonth--;
-    }
-    renderCalendar(currentYear, currentMonth);
-    updateYearSelection();
-    updateMonthsSelection();
-  });
-
-  nextMonthBtn.addEventListener('click', () => {
-    if (currentMonth === 11) {
-      if (YEARS.indexOf(currentYear) < YEARS.length-1) {
-        currentYear = YEARS[YEARS.indexOf(currentYear)+1];
-        currentMonth = 0;
-      }
-    } else {
-      currentMonth++;
-    }
-    renderCalendar(currentYear, currentMonth);
-    updateYearSelection();
-    updateMonthsSelection();
-  });
-
-  // Переключение экранов
-  function showScreenCalendar() {
-    screenSelect.classList.add('hidden-left');
-    screenSelect.classList.remove('hidden-right');
-    screenCalendar.classList.remove('hidden-right');
-    screenCalendar.classList.remove('hidden-left');
+  function updateSelectorActive(){
+    // months
+    const months = monthsGrid.querySelectorAll('.month-card');
+    months.forEach((m, idx)=> m.classList.toggle('active', idx===view.month));
+    // years
+    const years = yearRow.querySelectorAll('.year-chip');
+    years.forEach(y=> y.classList.toggle('active', Number(y.textContent)===view.year));
   }
 
-  function showScreenSelect() {
-    screenSelect.classList.remove('hidden-left');
-    screenSelect.classList.remove('hidden-right');
-    screenCalendar.classList.add('hidden-right');
-    screenCalendar.classList.add('hidden-left');
-  }
+  // Clicking a day sets activeKey based on view
+  // To allow gotoSelected to work after sheet closed, set activeKey when opening sheet
+  // But also expose API for debugging:
+  window.__paymentCalendar = {
+    highlights,
+    add(dateStr,color,note){ highlights[dateStr]={color,note}; saveHighlights(); renderMonth(view.year, view.month); },
+    remove(dateStr){ delete highlights[dateStr]; saveHighlights(); renderMonth(view.year, view.month); },
+    clearAll(){ highlights={}; saveHighlights(); renderMonth(view.year, view.month); }
+  };
 
-  openCalendarBtn.addEventListener('click', () => {
-    showScreenCalendar();
-    renderCalendar(currentYear, currentMonth);
-  });
+  // On calendar open, set activeKey to null until user clicks
+  openCalendarBtn.addEventListener('click', ()=> { activeKey=null; selectedCellEl=null; });
 
-  toSelectorBtn.addEventListener('click', () => {
-    showScreenSelect();
-  });
+  // When a day is clicked, activeKey set in renderMonth click handler
+  // But we also expose a helper in global for debugging
+  window.__openFor = function(dateStr){
+    const d = parseYmd(dateStr);
+    view.year = d.getFullYear(); view.month = d.getMonth();
+    renderMonth(view.year, view.month);
+    // find cell element
+    const cells = Array.from(daysGrid.querySelectorAll('.day')).filter(c => !c.classList.contains('other'));
+    const dayNum = d.getDate();
+    const target = cells.find(c => Number(c.textContent)===dayNum);
+    if (target){ selectedCellEl = target; activeKey = dateStr; openSheetFor(dateStr); }
+  };
 
-  toSelectBtn.addEventListener('click', () => {
-    showScreenSelect();
-  });
+  // ensure initial setup on load
+  init();
 
-  // Инициализация
-  renderYearRow();
-  renderMonthsGrid();
-  renderYearSelect();
-  updateYearSelection();
-  updateMonthsSelection();
-
-  // Первый экран виден по умолчанию
-  showScreenSelect();
-
-  // Обработка resize - не требуется, т.к. flexbox все сам адаптирует
+})();
 </script>
 </body>
 </html>
