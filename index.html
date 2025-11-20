@@ -1,1 +1,767 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Календарь платежей — iOS17 стиль (финал)</title>
+<style>
+  /* Системные шрифты */
+  body, button, input, select { font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  :root{
+    --bg-light:#ffffff; --bg-dark:#0b0b0d; --text-light:#111215; --text-dark:#f2f2f5;
+    --primary:#0a84ff; --radius:14px; --anim:220ms cubic-bezier(.4,0,.2,1); --shadow:0 10px 30px rgba(10,10,10,0.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:var(--bg-dark); --text:var(--text-dark); --overlay:rgba(255,255,255,0.04); }
+  }
+  :root{ --bg:var(--bg-light); --text:var(--text-light); --overlay:rgba(0,0,0,0.06); }
 
+  /* Категории (яркие) */
+  --cat-ипотека:#ff4d4f; --cat-подписки:#ff8c3b; --cat-кредит:#2f80ed;
+  --cat-связь:#4cc9f0; --cat-коммуналка:#ffd60a; --cat-другое:#ff66b2;
+
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+  #app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom);gap:8px;}
+  header{display:flex;align-items:center;justify-content:center;position:relative;padding:12px 8px 4px;}
+  header h1{margin:0;font-size:1.15rem;font-weight:800;letter-spacing:0.01em}
+  .nav-left,.nav-right{position:absolute;top:50%;transform:translateY(-50%);background:transparent;border:0;padding:8px;border-radius:10px;color:var(--primary);cursor:pointer}
+  .nav-left{left:8px} .nav-right{right:8px}
+  .controls{display:flex;gap:8px;justify-content:center;padding:0 12px 8px;}
+
+  .btn {background:var(--primary);color:#fff;border:0;padding:10px 12px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);transition:transform var(--anim);display:inline-flex;gap:8px;align-items:center;}
+  .btn:active{transform:translateY(1px)}
+  .ghost{background:transparent;color:var(--text);border:1px solid var(--overlay);padding:8px 10px;border-radius:10px}
+  .small{padding:8px 10px;border-radius:10px;font-weight:700}
+
+  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:0 6px}
+  .weekday{font-weight:800;font-size:0.82rem;text-align:center;padding:6px 4px;color:var(--primary);}
+
+  .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:6px}
+  .day{min-height:72px;border-radius:12px;padding:8px 6px 8px 6px;position:relative;overflow:hidden;transition:background-color var(--anim),transform var(--anim);display:flex;flex-direction:column;justify-content:flex-start;cursor:pointer}
+  .day.empty{opacity:0.18;cursor:default;background:transparent}
+  .day:hover{transform:translateY(-4px)}
+  .num{font-weight:900;z-index:2;width:36px;height:36px;line-height:36px;border-radius:50%;text-align:center;background:transparent;color:inherit}
+  .day.today .num{box-shadow:0 10px 30px rgba(10,132,255,0.08);outline:2px solid rgba(255,255,255,0.04)}
+  .badge{position:absolute;right:8px;top:8px;background:rgba(0,0,0,0.12);color:#fff;padding:4px 8px;border-radius:10px;font-weight:800;font-size:0.8rem}
+  .list{margin-top:6px;display:flex;flex-direction:column;gap:6px;z-index:2}
+  .chip{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:10px;font-weight:800;color:white;font-size:0.88rem;box-shadow:0 6px 14px rgba(0,0,0,0.08);}
+
+  #fab{position:fixed;right:18px;bottom:18px;width:58px;height:58px;border-radius:50%;background:var(--primary);color:#fff;font-size:34px;border:0;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);z-index:2000}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:2000;padding:20px}
+  .modal{background:var(--bg);border-radius:14px;box-shadow:var(--shadow);width:100%;max-width:520px;max-height:92vh;overflow:auto;padding:16px;position:relative}
+  .modal h2{margin:0 0 12px;font-size:1.1rem;font-weight:800;text-align:center}
+  .close{position:absolute;right:12px;top:12px;border:0;background:transparent;font-size:22px;color:var(--primary);cursor:pointer}
+
+  form{display:flex;flex-direction:column;gap:8px}
+  label{font-weight:800;font-size:0.9rem}
+  input[type=text],input[type=number],input[type=date],select{padding:10px;border-radius:12px;border:1px solid var(--overlay);background:transparent;color:var(--text);outline:none;font-size:1rem}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .color-picker{display:flex;gap:8px;flex-wrap:wrap}
+  .color-btn{width:36px;height:36px;border-radius:8px;border:2px solid transparent;cursor:pointer}
+  .color-btn.selected{transform:translateY(-2px);outline:3px solid rgba(0,0,0,0.06)}
+
+  .payment-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+  .payment-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:10px}
+  .actions{display:flex;gap:6px}
+
+  footer{padding:10px 6px 30px;text-align:center;font-size:0.85rem;color:var(--text);opacity:0.9}
+
+  @media (min-width:420px){ .day{min-height:88px} }
+</style>
+</head>
+<body>
+<div id="app" role="application" aria-label="Календарь платежей">
+  <header>
+    <button class="nav-left" id="prev">&lsaquo;</button>
+    <h1 id="monthLabel" aria-live="polite"></h1>
+    <button class="nav-right" id="next">&rsaquo;</button>
+  </header>
+
+  <div class="controls">
+    <button class="btn small" id="todayBtn">Сегодня</button>
+    <button class="ghost small" id="startMonthNav">1-е (показать)</button>
+    <button class="ghost small" id="endMonthNav">посл. день (показать)</button>
+  </div>
+
+  <div class="weekdays" aria-hidden="false">
+    <div class="weekday">Пн</div>
+    <div class="weekday">Вт</div>
+    <div class="weekday">Ср</div>
+    <div class="weekday">Чт</div>
+    <div class="weekday">Пт</div>
+    <div class="weekday">Сб</div>
+    <div class="weekday">Вс</div>
+  </div>
+
+  <div id="calendar" class="calendar" role="grid" aria-label="Календарь"></div>
+
+  <button id="fab" title="Добавить платеж">+</button>
+
+  <footer>Данные хранятся локально. Напоминания через бота/сервер.</footer>
+</div>
+
+<!-- Modal: Add/Edit -->
+<div id="modalAdd" class="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <button class="close" data-close>&times;</button>
+    <h2 id="addTitle">Добавить платеж</h2>
+    <form id="form">
+      <input type="hidden" id="pid">
+      <label for="pname">Название</label>
+      <input id="pname" type="text" required placeholder="Например, Ипотека">
+
+      <label for="psum">Сумма (₽)</label>
+      <input id="psum" type="number" required min="0" step="0.01" placeholder="10000">
+
+      <label for="pdate">Дата</label>
+      <input id="pdate" type="date" required>
+
+      <label for="pcat">Категория</label>
+      <select id="pcat" required>
+        <option value="ипотека">Ипотека</option>
+        <option value="подписки">Подписки</option>
+        <option value="кредит">Кредит</option>
+        <option value="связь">Связь</option>
+        <option value="коммуналка">Коммуналка</option>
+        <option value="другое">Другое</option>
+      </select>
+
+      <label>Периодичность</label>
+      <div class="row" id="periodRow">
+        <label style="display:flex;align-items:center;gap:8px"><input type="radio" name="period" value="разово" checked> Разово</label>
+        <label style="display:flex;align-items:center;gap:8px"><input type="radio" name="period" value="start_month"> 1-е</label>
+        <label style="display:flex;align-items:center;gap:8px"><input type="radio" name="period" value="end_month"> посл. день</label>
+      </div>
+
+      <label><input type="checkbox" id="autoSeries"> Создать автосерию (24 повтора вперед)</label>
+
+      <label>Цвет метки (по умолчанию — цвет категории)</label>
+      <div class="color-picker" id="colorPicker"></div>
+
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="saveBtn" type="submit">Сохранить</button>
+        <button class="ghost" id="btnAdd30" type="button">+30 дней</button>
+        <button class="ghost" id="btnAdd30Auto" type="button">+30 (серия 24)</button>
+        <button class="ghost" id="btnDelete" type="button" style="margin-left:auto;color:#d9534f">Удалить</button>
+      </div>
+      <div style="margin-top:8px;font-size:0.9rem;color:gray">Примечание: автосерия создаст будущие платежи (24 штуки). Удаление одного платежа серии удаляет только последующие.</div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Day view -->
+<div id="modalDay" class="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dayTitle">
+    <button class="close" data-close>&times;</button>
+    <h2 id="dayTitle">Платежи</h2>
+    <div id="dayList" class="payment-list" style="margin-top:8px"></div>
+    <div style="margin-top:12px;text-align:right;font-weight:800" id="dayTotal"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* -----------------------
+     Конфигурация цветов
+     ----------------------- */
+  const CAT_COLORS = {
+    'ипотека': getComputedStyle(document.documentElement).getPropertyValue('--cat-ипотека').trim() || '#ff4d4f',
+    'подписки': getComputedStyle(document.documentElement).getPropertyValue('--cat-подписки').trim() || '#ff8c3b',
+    'кредит': getComputedStyle(document.documentElement).getPropertyValue('--cat-кредит').trim() || '#2f80ed',
+    'связь': getComputedStyle(document.documentElement).getPropertyValue('--cat-связь').trim() || '#4cc9f0',
+    'коммуналка': getComputedStyle(document.documentElement).getPropertyValue('--cat-коммуналка').trim() || '#ffd60a',
+    'другое': getComputedStyle(document.documentElement).getPropertyValue('--cat-другое').trim() || '#ff66b2'
+  };
+
+  /* -----------------------
+     DOM элементы
+     ----------------------- */
+  const calendarEl = document.getElementById('calendar');
+  const monthLabel = document.getElementById('monthLabel');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const todayBtn = document.getElementById('todayBtn');
+  const fab = document.getElementById('fab');
+  const startMonthNav = document.getElementById('startMonthNav');
+  const endMonthNav = document.getElementById('endMonthNav');
+
+  const modalAdd = document.getElementById('modalAdd');
+  const form = document.getElementById('form');
+  const pid = document.getElementById('pid');
+  const pname = document.getElementById('pname');
+  const psum = document.getElementById('psum');
+  const pdate = document.getElementById('pdate');
+  const pcat = document.getElementById('pcat');
+  const colorPicker = document.getElementById('colorPicker');
+  const autoSeriesCheckbox = document.getElementById('autoSeries');
+  const btnAdd30 = document.getElementById('btnAdd30');
+  const btnAdd30Auto = document.getElementById('btnAdd30Auto');
+  const btnDelete = document.getElementById('btnDelete');
+
+  const modalDay = document.getElementById('modalDay');
+  const dayTitle = document.getElementById('dayTitle');
+  const dayList = document.getElementById('dayList');
+  const dayTotal = document.getElementById('dayTotal');
+
+  /* -----------------------
+     Состояние
+     ----------------------- */
+  let today = new Date();
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth(); // 0-11
+
+  // payments: [{id, name, sum, date(yyyy-mm-dd), category, period:'разово'|'start_month'|'end_month', color, createdAt, seriesId (optional), seriesIndex (optional)}]
+  let payments = [];
+
+  const SERIES_LENGTH = 24; // 24 повтора вперед по требованию
+
+  /* -----------------------
+     Хранение
+     ----------------------- */
+  function load() {
+    try {
+      const raw = localStorage.getItem('payments_v3');
+      payments = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      payments = [];
+    }
+  }
+  function save() {
+    localStorage.setItem('payments_v3', JSON.stringify(payments));
+  }
+
+  /* -----------------------
+     Утилиты
+     ----------------------- */
+  function uid() { return '_' + Math.random().toString(36).slice(2,9); }
+  function iso(d){ if(!(d instanceof Date)) return ''; const y=d.getFullYear(); const m=('0'+(d.getMonth()+1)).slice(-2); const day=('0'+d.getDate()).slice(-2); return `${y}-${m}-${day}`; }
+  function parseISO(s){ if(!s) return null; const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+  function lastDayOfMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+  function isSameDate(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+  function addDays(d,n){ const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+  function capitalize(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+  function labelForPeriod(p){
+    if(p==='разово') return 'Разово';
+    if(p==='start_month') return '1-е';
+    if(p==='end_month') return 'Последний день';
+    return p;
+  }
+
+  /* -----------------------
+     Получение платежей для даты (учитывая правила серии и повторы)
+     - Для простоты: платежи хранятся как отдельные записи; автогенерация создаёт будущие записи.
+     - Здесь просто фильтруем payments по дате
+     ----------------------- */
+  function paymentsOn(date){
+    const t = iso(date);
+    return payments.filter(p => p.date === t);
+  }
+
+  /* -----------------------
+     Рендер календаря
+     ----------------------- */
+  function renderCalendar(){
+    calendarEl.innerHTML = '';
+    const first = new Date(viewYear, viewMonth, 1);
+    monthLabel.textContent = first.toLocaleDateString('ru-RU', {month:'long', year:'numeric'});
+
+    // Monday-first scheme
+    let startWeekDay = first.getDay(); // 0..6 Sunday..Sat
+    startWeekDay = startWeekDay === 0 ? 7 : startWeekDay; // Sunday => 7
+    const prefix = startWeekDay - 1; // empty count before day 1
+
+    const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+    const totalCells = 42;
+
+    for(let i=0;i<totalCells;i++){
+      const cell = document.createElement('div');
+      cell.className = 'day';
+      const dayIndex = i - prefix + 1;
+      if(dayIndex < 1 || dayIndex > daysInMonth){
+        cell.classList.add('empty');
+        const num = document.createElement('div'); num.className='num'; num.textContent = '';
+        cell.appendChild(num);
+      } else {
+        const d = new Date(viewYear, viewMonth, dayIndex);
+        const num = document.createElement('div'); num.className='num'; num.textContent = dayIndex;
+        if(isSameDate(d, new Date())) cell.classList.add('today');
+
+        const todays = paymentsOn(d);
+        if(todays.length){
+          // выбор цвета: категория с наибольшей суммой (вариант A)
+          const sums = {};
+          todays.forEach(p=> sums[p.category] = (sums[p.category]||0) + Number(p.sum||0));
+          let maxCat = Object.keys(sums).reduce((a,b)=> sums[a]>=sums[b] ? a : b);
+          const bg = CAT_COLORS[maxCat] || '#999';
+          cell.style.background = bg;
+          cell.style.color = '#fff';
+          const badge = document.createElement('div'); badge.className='badge'; badge.textContent = `${todays.length}`;
+          cell.appendChild(badge);
+
+          const list = document.createElement('div'); list.className='list';
+          const top = todays.slice(0,2);
+          top.forEach(p=>{
+            const chip = document.createElement('div'); chip.className='chip';
+            chip.style.background = p.color || CAT_COLORS[p.category] || '#666';
+            const left = document.createElement('div'); left.style.maxWidth='68%'; left.style.overflow='hidden'; left.style.textOverflow='ellipsis'; left.style.whiteSpace='nowrap';
+            left.textContent = p.name;
+            const right = document.createElement('div'); right.textContent = Number(p.sum).toLocaleString('ru-RU',{style:'currency',currency:'RUB',minimumFractionDigits:2});
+            chip.appendChild(left); chip.appendChild(right);
+            list.appendChild(chip);
+          });
+          cell.appendChild(list);
+        } else {
+          cell.style.background = 'transparent';
+        }
+
+        cell.addEventListener('click', ()=> openDayModal(d));
+        cell.appendChild(num);
+        cell.dataset.date = iso(d);
+      }
+      calendarEl.appendChild(cell);
+    }
+  }
+
+  /* -----------------------
+     Модальные окна
+     ----------------------- */
+  function openModal(el){ el.hidden = false; el.style.display = 'flex'; setTimeout(()=> el.style.opacity = 1, 10); }
+  function closeModal(el){ el.hidden = true; el.style.display = 'none'; }
+
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', e => {
+    const p = e.target.closest('.overlay'); if(p) closeModal(p);
+  }));
+
+  [modalAdd, modalDay].forEach(m => m.addEventListener('click', e => { if(e.target === m) closeModal(m); }));
+  document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeModal(modalAdd); closeModal(modalDay); } });
+
+  /* -----------------------
+     Просмотр дня
+     ----------------------- */
+  function openDayModal(date){
+    const title = 'Платежи ' + date.toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'});
+    dayTitle.textContent = title;
+    dayList.innerHTML = '';
+    const list = paymentsOn(date).slice().sort((a,b)=> a.createdAt - b.createdAt);
+    if(list.length === 0){
+      const empty = document.createElement('div'); empty.className='muted'; empty.textContent = 'Платежи отсутствуют';
+      dayList.appendChild(empty); dayTotal.textContent = '';
+    } else {
+      let total = 0;
+      list.forEach(p=>{
+        const item = document.createElement('div'); item.className='payment-item';
+        const left = document.createElement('div'); left.style.display='flex'; left.style.flexDirection='column';
+        const name = document.createElement('div'); name.textContent = p.name; name.style.fontWeight='800';
+        const meta = document.createElement('div'); meta.textContent = `${capitalize(p.category)} · ${labelForPeriod(p.period)}`; meta.style.fontSize='0.9rem'; meta.style.opacity='0.8';
+        left.appendChild(name); left.appendChild(meta);
+
+        const right = document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.alignItems='flex-end';
+        const sum = document.createElement('div'); sum.textContent = Number(p.sum).toLocaleString('ru-RU',{style:'currency',currency:'RUB',minimumFractionDigits:2}); sum.style.fontWeight='800';
+        const actions = document.createElement('div'); actions.className='actions';
+
+        const edit = document.createElement('button'); edit.className='ghost'; edit.textContent='Ред.'; edit.addEventListener('click', ()=> openEditPayment(p.id));
+        const plus30 = document.createElement('button'); plus30.className='ghost'; plus30.textContent='+30д'; plus30.addEventListener('click', ()=>{
+          const base = parseISO(p.date); const nd = addDays(base,30);
+          const copy = {...p, id: uid(), date: iso(nd), createdAt: Date.now(), seriesId: null, seriesIndex: null};
+          payments.push(copy); save(); renderCalendar(); openDayModal(date);
+        });
+        const del = document.createElement('button'); del.className='ghost'; del.style.color='#d9534f'; del.textContent='Удал.'; del.addEventListener('click', ()=> {
+          if(confirm(`Удалить "${p.name}" ${p.date}?`)){
+            deletePaymentAndFollowing(p.id);
+            save(); renderCalendar(); openDayModal(date);
+          }
+        });
+
+        actions.appendChild(edit); actions.appendChild(plus30); actions.appendChild(del);
+        right.appendChild(sum); right.appendChild(actions);
+
+        item.appendChild(left); item.appendChild(right);
+        dayList.appendChild(item);
+        total += Number(p.sum || 0);
+      });
+      dayTotal.textContent = 'Итого: ' + total.toLocaleString('ru-RU',{style:'currency',currency:'RUB',minimumFractionDigits:2});
+    }
+    openModal(modalDay);
+  }
+
+  /* -----------------------
+     Добавление / Редактирование
+     ----------------------- */
+  function openNewPayment(defaultDate){
+    pid.value = '';
+    pname.value = '';
+    psum.value = '';
+    pdate.value = defaultDate ? iso(defaultDate) : iso(new Date());
+    pcat.value = 'подписки';
+    autoSeriesCheckbox.checked = true;
+    buildColorPicker();
+    selectColorByCategory(pcat.value);
+    btnDelete.style.display = 'none';
+    openModal(modalAdd);
+  }
+
+  function openEditPayment(id){
+    const p = payments.find(x=> x.id === id);
+    if(!p) return;
+    pid.value = p.id;
+    pname.value = p.name;
+    psum.value = p.sum;
+    pdate.value = p.date;
+    pcat.value = p.category;
+    autoSeriesCheckbox.checked = false; // при редактировании автосерию не пересоздаем по умолчанию
+    buildColorPicker();
+    selectColorByColor(p.color);
+    // set radio period
+    const node = document.querySelector(`input[name="period"][value="${p.period}"]`);
+    if(node) node.checked = true;
+    btnDelete.style.display = 'inline-block';
+    openModal(modalAdd);
+  }
+
+  // Color picker UI
+  function buildColorPicker(){
+    colorPicker.innerHTML = '';
+    for(const key of Object.keys(CAT_COLORS)){
+      const b = document.createElement('button'); b.className='color-btn'; b.title = key; b.style.background = CAT_COLORS[key];
+      b.dataset.color = CAT_COLORS[key]; b.dataset.cat = key;
+      b.addEventListener('click', ()=> {
+        document.querySelectorAll('.color-btn').forEach(x=>x.classList.remove('selected'));
+        b.classList.add('selected');
+      });
+      colorPicker.appendChild(b);
+    }
+  }
+  function selectColorByCategory(cat){
+    const b = Array.from(colorPicker.children).find(x=> x.dataset.cat === cat);
+    if(b){ document.querySelectorAll('.color-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); }
+  }
+  function selectColorByColor(color){
+    const b = Array.from(colorPicker.children).find(x=> x.dataset.color === color);
+    if(b){ document.querySelectorAll('.color-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); }
+  }
+  function getSelectedColor(){ const s = colorPicker.querySelector('.color-btn.selected'); return s ? s.dataset.color : (CAT_COLORS[pcat.value]||'#999'); }
+
+  // Save form
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const data = {
+      id: pid.value || uid(),
+      name: (pname.value.trim()||'Без названия'),
+      sum: Number(psum.value)||0,
+      date: pdate.value,
+      category: pcat.value,
+      period: document.querySelector('input[name="period"]:checked').value,
+      color: getSelectedColor(),
+      createdAt: Date.now(),
+      seriesId: null,
+      seriesIndex: null
+    };
+    // if editing existing => replace single record (series management handled separately)
+    const idx = payments.findIndex(x=> x.id === data.id);
+    if(idx >= 0){
+      // update single record; if it is part of series and user checked autoSeries we may want to update series - but to keep safe, editing does not auto-update future series
+      payments[idx] = {...payments[idx], ...data};
+      save();
+      renderCalendar();
+      closeModal(modalAdd);
+      return;
+    }
+
+    // new payment -> push
+    payments.push(data);
+    // if auto series checked -> generate series according to period OR if user later pressed btnAdd30Auto
+    if(autoSeriesCheckbox.checked){
+      if(data.period === 'start_month') generateStartMonthSeries(data);
+      else if(data.period === 'end_month') generateEndMonthSeries(data);
+      // if it's разово, and user wanted auto series they'd use +30 auto button which is separate
+    }
+    save();
+    renderCalendar();
+    closeModal(modalAdd);
+  });
+
+  /* -----------------------
+     +30 buttons
+     btnAdd30: creates next occurrence (single)
+     btnAdd30Auto: creates series of 24 occurrences (+30 each) and links them as series
+     ----------------------- */
+  btnAdd30.addEventListener('click', ()=>{
+    const data = {
+      id: pid.value || uid(),
+      name: (pname.value.trim()||'Без названия'),
+      sum: Number(psum.value)||0,
+      date: pdate.value || iso(new Date()),
+      category: pcat.value,
+      period: 'разово',
+      color: getSelectedColor(),
+      createdAt: Date.now(),
+      seriesId: null,
+      seriesIndex: null
+    };
+    // create a next single +30 payment based on the date in the form
+    const base = parseISO(data.date) || new Date();
+    const next = addDays(base,30);
+    const copy = {...data, id: uid(), date: iso(next)};
+    payments.push(copy); save(); renderCalendar(); openEditPayment(copy.id);
+  });
+
+  btnAdd30Auto.addEventListener('click', ()=>{
+    // create a series of 24 occurrences every +30 days starting after base date
+    const base = parseISO(pdate.value) || new Date();
+    const seriesId = uid();
+    for(let i=1;i<=SERIES_LENGTH;i++){
+      const nd = addDays(base, 30 * i);
+      const p = {
+        id: uid(),
+        name: (pname.value.trim()||'Без названия'),
+        sum: Number(psum.value)||0,
+        date: iso(nd),
+        category: pcat.value,
+        period: 'разово',
+        color: getSelectedColor(),
+        createdAt: Date.now(),
+        seriesId,
+        seriesIndex: i
+      };
+      payments.push(p);
+    }
+    save(); renderCalendar();
+    // open modal for first generated payment (optional)
+    // openEditPayment(payments.find(p=>p.seriesId===seriesId).id);
+  });
+
+  /* -----------------------
+     Генерация автосерий для 1-е и посл. день
+     - создаём SERIES_LENGTH записей в будущем и связываем их seriesId + индекс
+     - series starts from the next occurrence (so if original date is 2025-11-19 and user chooses start_month,
+       we will create payments for 1.dec, 1.jan, ... up to 24)
+     ----------------------- */
+  function generateStartMonthSeries(original){
+    // original: object that exists in payments array
+    // create seriesId and create occurrences for the next 24 months INCLUDING the current month if appropriate?
+    // We'll create next SERIES_LENGTH occurrences after the current date's month (i from 1..SERIES_LENGTH)
+    const base = parseISO(original.date) || new Date();
+    const seriesId = uid();
+    // ensure original is linked too (so we can manage series): mark original as seriesIndex 0
+    original.seriesId = seriesId;
+    original.seriesIndex = 0;
+    // create occurrences on 1st of next months
+    for(let i=1;i<=SERIES_LENGTH;i++){
+      const y = base.getFullYear();
+      const m = base.getMonth() + i;
+      const d = new Date(y, m, 1); // 1st of month (javascript handles overflow)
+      const p = {
+        id: uid(),
+        name: original.name,
+        sum: Number(original.sum)||0,
+        date: iso(d),
+        category: original.category,
+        period: 'start_month',
+        color: original.color || CAT_COLORS[original.category],
+        createdAt: Date.now(),
+        seriesId,
+        seriesIndex: i
+      };
+      payments.push(p);
+    }
+  }
+
+  function generateEndMonthSeries(original){
+    const base = parseISO(original.date) || new Date();
+    const seriesId = uid();
+    original.seriesId = seriesId;
+    original.seriesIndex = 0;
+    for(let i=1;i<=SERIES_LENGTH;i++){
+      const y = base.getFullYear();
+      const m = base.getMonth() + i;
+      const year = new Date(y, m, 1).getFullYear();
+      const month = new Date(y, m, 1).getMonth();
+      const ld = lastDayOfMonth(year, month);
+      const d = new Date(year, month, ld);
+      const p = {
+        id: uid(),
+        name: original.name,
+        sum: Number(original.sum)||0,
+        date: iso(d),
+        category: original.category,
+        period: 'end_month',
+        color: original.color || CAT_COLORS[original.category],
+        createdAt: Date.now(),
+        seriesId,
+        seriesIndex: i
+      };
+      payments.push(p);
+    }
+  }
+
+  /* -----------------------
+     Удаление платежа и всех последующих в серии
+     Требование: если удаляем платёж в серии, удалить только ПОСЛЕДУЮЩИЕ платежи (date > удалённой), оставить предыдущие
+     ----------------------- */
+  function deletePaymentAndFollowing(id){
+    const p = payments.find(x=> x.id === id);
+    if(!p){
+      // simple fallback: remove id if exists
+      payments = payments.filter(x=> x.id !== id);
+      save();
+      return;
+    }
+    if(!p.seriesId){
+      // not part of series — delete only itself
+      payments = payments.filter(x=> x.id !== id);
+      save();
+      return;
+    }
+    const sid = p.seriesId;
+    const baseDate = parseISO(p.date);
+    // remove all payments with same seriesId and date >= baseDate (strictly greater than baseDate? requirement says удаления последующих (после) — keep those BEFORE, remove those AFTER)
+    // they said: "Если я удаляю платеж 1 января, то удаляй только ПОСЛЕДУЮЩИЕ платежи, а те что были до оставь"
+    // So remove payments with same seriesId and date > baseDate. Also remove the selected one itself (user requested deletion).
+    payments = payments.filter(x => {
+      if(x.id === id) return false; // remove selected
+      if(x.seriesId !== sid) return true; // keep unrelated
+      const xd = parseISO(x.date);
+      // keep those with date < = baseDate? We remove only date > baseDate
+      if(xd > baseDate) return false; // remove future ones
+      return true; // keep past ones (<=)
+    });
+    save();
+  }
+
+  /* -----------------------
+     Удаление одной записи (без затрагивания серии) — редко используется
+     ----------------------- */
+  function deleteSingle(id){
+    payments = payments.filter(x=> x.id !== id);
+    save();
+  }
+
+  /* -----------------------
+     Навигация и инициализация
+     ----------------------- */
+  prevBtn.addEventListener('click', () => {
+    if(viewMonth === 0){ viewMonth = 11; viewYear--; } else viewMonth--;
+    renderCalendar();
+  });
+  nextBtn.addEventListener('click', () => {
+    if(viewMonth === 11){ viewMonth = 0; viewYear++; } else viewMonth++;
+    renderCalendar();
+  });
+  todayBtn.addEventListener('click', () => {
+    const n = new Date();
+    viewYear = n.getFullYear(); viewMonth = n.getMonth();
+    renderCalendar();
+  });
+  fab.addEventListener('click', () => openNewPayment(new Date(viewYear, viewMonth, 1)));
+
+  // start/end navigation open day modal for first/last day of viewed month
+  startMonthNav.addEventListener('click', () => {
+    const d = new Date(viewYear, viewMonth, 1);
+    openDayModal(d);
+  });
+  endMonthNav.addEventListener('click', () => {
+    const ld = lastDayOfMonth(viewYear, viewMonth);
+    const d = new Date(viewYear, viewMonth, ld);
+    openDayModal(d);
+  });
+
+  // delete button in add/edit modal — deletes and following for this payment if series present, otherwise deletes single
+  btnDelete.addEventListener('click', () => {
+    if(!pid.value) return;
+    if(!confirm('Удалить платеж и последующие в серии? (будут удалены только следующие)')) return;
+    deletePaymentAndFollowing(pid.value);
+    save();
+    renderCalendar();
+    closeModal(modalAdd);
+  });
+
+  // Close helpers
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', e => {
+    const modal = e.target.closest('.overlay'); if(modal) closeModal(modal);
+  }));
+
+  // init color buttons
+  function initColorPicker(){
+    buildColorPicker();
+    pcat.addEventListener('change', ()=> selectColorByCategory(pcat.value));
+  }
+
+  /* -----------------------
+     Инициализация
+     ----------------------- */
+  function init(){
+    load();
+    initColorPicker();
+    renderCalendar();
+  }
+
+  // build color picker
+  function buildColorPicker(){
+    colorPicker.innerHTML = '';
+    Object.keys(CAT_COLORS).forEach(cat => {
+      const b = document.createElement('button'); b.className='color-btn'; b.style.background = CAT_COLORS[cat];
+      b.dataset.cat = cat; b.dataset.color = CAT_COLORS[cat];
+      b.title = capitalize(cat);
+      b.addEventListener('click', ()=> {
+        document.querySelectorAll('.color-btn').forEach(x=>x.classList.remove('selected'));
+        b.classList.add('selected');
+      });
+      colorPicker.appendChild(b);
+    });
+  }
+  function selectColorByCategory(cat){
+    const b = Array.from(colorPicker.children).find(x=> x.dataset.cat === cat);
+    if(b){ document.querySelectorAll('.color-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); }
+  }
+
+  // helper to open new payment (for fab)
+  function openNewPayment(defaultDate){
+    pid.value = '';
+    pname.value = '';
+    psum.value = '';
+    pdate.value = defaultDate ? iso(defaultDate) : iso(new Date());
+    pcat.value = 'подписки';
+    autoSeriesCheckbox.checked = true;
+    buildColorPicker();
+    selectColorByCategory(pcat.value);
+    btnDelete.style.display = 'none';
+    openModal(modalAdd);
+  }
+
+  // helper to open edit payment by id
+  function openEditPayment(id){
+    const p = payments.find(x=> x.id === id);
+    if(!p) return;
+    pid.value = p.id;
+    pname.value = p.name;
+    psum.value = p.sum;
+    pdate.value = p.date;
+    pcat.value = p.category;
+    buildColorPicker();
+    selectColorByColor(p.color);
+    // set period radio
+    const node = document.querySelector(`input[name="period"][value="${p.period}"]`);
+    if(node) node.checked = true;
+    autoSeriesCheckbox.checked = false; // editing doesn't auto-create series
+    btnDelete.style.display = 'inline-block';
+    openModal(modalAdd);
+  }
+  function selectColorByColor(color){
+    const b = Array.from(colorPicker.children).find(x=> x.dataset.color === color);
+    if(b){ document.querySelectorAll('.color-btn').forEach(x=>x.classList.remove('selected')); b.classList.add('selected'); }
+  }
+
+  // expose helper for console
+  window._payments = payments;
+  window._reinit = () => { load(); renderCalendar(); };
+
+  // start
+  init();
+
+})();
+</script>
+</body>
+</html>
