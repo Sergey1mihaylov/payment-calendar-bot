@@ -19,17 +19,25 @@
     --clr-yellow:#ffcc00;
     --clr-green:#34c759;
     --clr-purple:#af52de;
+    
+    /* Safe area variables */
+    --sat: env(safe-area-inset-top);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
+    --sar: env(safe-area-inset-right);
   }
 
   /* Safe area + full-height */
   html,body{
     height:100%;
     margin:0;
+    padding:0;
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
     font-family: -apple-system, "SF Pro Text","SF Pro Display","Helvetica Neue", Arial, sans-serif;
     background: linear-gradient(180deg,#eef3f8 0%, var(--bg) 100%);
     color:#0b1226;
+    overflow: hidden; /* Prevent body scroll */
   }
 
   /* Use large viewport units when available */
@@ -38,24 +46,23 @@
     min-height:100svh; /* best on most modern browsers */
     height:100dvh; /* fallback to cover device height */
     box-sizing:border-box;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-top: var(--sat, 0);
+    padding-bottom: var(--sab, 0);
+    padding-left: var(--sal, 0);
+    padding-right: var(--sar, 0);
     display:flex;
     align-items:center;
     justify-content:center;
-    padding: 12px;
+    padding: 0; /* Remove extra padding */
   }
 
-  /* Shell card */
+  /* Shell card - full width/height */
   .shell {
     width:100%;
-    max-width:980px;
     height:100%;
-    border-radius: 18px;
+    border-radius: 0; /* Remove rounded corners for full screen */
     background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,250,252,0.88));
-    box-shadow: var(--shadow-lg);
+    box-shadow: none; /* Remove shadow for full screen */
     display:flex;
     flex-direction:column;
     overflow:hidden;
@@ -67,7 +74,7 @@
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:14px 18px;
+    padding:14px 16px;
     gap:12px;
     border-bottom: 1px solid rgba(11,18,38,0.04);
     background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
@@ -81,6 +88,7 @@
     display:flex;
     overflow:hidden;
     position:relative;
+    width: 100%;
   }
 
   .screen {
@@ -90,8 +98,9 @@
     transition: transform 360ms cubic-bezier(.2,.9,.2,1);
     overflow:auto;
     -webkit-overflow-scrolling: touch;
-    padding:18px;
+    padding:16px;
     box-sizing:border-box;
+    overflow-x: hidden; /* Prevent horizontal scroll */
   }
 
   .screen.hidden-left { transform: translateX(-100%); }
@@ -102,6 +111,7 @@
     display:flex;
     flex-direction:column;
     gap:14px;
+    width: 100%;
   }
 
   .panel {
@@ -109,15 +119,17 @@
     border-radius:14px;
     padding:14px;
     box-shadow: var(--shadow-sm);
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .months-grid {
     display:grid;
     grid-template-columns: repeat(3, 1fr);
-    gap:10px;
+    gap:8px;
   }
   .month-card {
-    padding:12px;
+    padding:12px 8px;
     border-radius:10px;
     text-align:center;
     font-weight:800;
@@ -125,6 +137,7 @@
     user-select:none;
     background:transparent;
     transition: transform 180ms, box-shadow 160ms, background 180ms;
+    font-size: 14px;
   }
   .month-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(12,18,30,0.06); }
   .month-card.active {
@@ -134,14 +147,31 @@
     box-shadow: 0 18px 40px rgba(10,132,255,0.14);
   }
 
-  .year-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
-  .year-chip {
-    padding:8px 12px; border-radius:12px;
-    background:linear-gradient(180deg,#fff,#f4f6fb);
-    cursor:pointer; font-weight:800;
-    box-shadow: 0 8px 22px rgba(12,18,30,0.04);
+  .year-row { 
+    display:flex; 
+    gap:6px; 
+    flex-wrap:wrap; 
+    align-items:center; 
+    margin-top:8px; 
+    width: 100%;
   }
-  .year-chip.active { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; transform: translateY(-3px); }
+  .year-chip {
+    padding:8px 12px; 
+    border-radius:12px;
+    background:linear-gradient(180deg,#fff,#f4f6fb);
+    cursor:pointer; 
+    font-weight:800;
+    box-shadow: 0 8px 22px rgba(12,18,30,0.04);
+    font-size: 14px;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+  }
+  .year-chip.active { 
+    background: linear-gradient(90deg,var(--accent),var(--accent-2)); 
+    color:#fff; 
+    transform: translateY(-3px); 
+  }
 
   .open-btn {
     margin-top:12px;
@@ -153,6 +183,8 @@
     color:#fff;
     cursor:pointer;
     box-shadow: 0 18px 40px rgba(10,132,255,0.14);
+    width: 100%;
+    box-sizing: border-box;
   }
 
   /* SCREEN 2 — calendar */
@@ -162,22 +194,44 @@
     justify-content:space-between;
     gap:12px;
     margin-bottom:10px;
+    flex-wrap: wrap;
   }
-  .cal-controls { display:flex; gap:8px; align-items:center; }
+  .cal-controls { 
+    display:flex; 
+    gap:8px; 
+    align-items:center; 
+    flex: 1;
+    min-width: 0;
+  }
   .small-btn {
-    padding:8px 10px; border-radius:10px; border:none; cursor:pointer; background:linear-gradient(180deg,#fff,#f4f6fb); box-shadow: var(--shadow-sm); font-weight:800;
+    padding:8px 10px; 
+    border-radius:10px; 
+    border:none; 
+    cursor:pointer; 
+    background:linear-gradient(180deg,#fff,#f4f6fb); 
+    box-shadow: var(--shadow-sm); 
+    font-weight:800;
+    font-size: 14px;
   }
 
-  .month-title { font-weight:800; font-size:16px; }
+  .month-title { 
+    font-weight:800; 
+    font-size:16px; 
+    text-align: center;
+    flex: 1;
+    min-width: 0;
+  }
 
   .main-pane {
     display:flex;
     gap:14px;
     align-items:flex-start;
+    width: 100%;
+    flex-direction: column;
   }
 
   .calendar {
-    flex:1;
+    width: 100%;
     min-width:0;
     background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(248,249,252,0.7));
     border-radius:12px;
@@ -186,18 +240,45 @@
     display:flex;
     flex-direction:column;
     gap:8px;
+    box-sizing: border-box;
   }
 
-  .weekdays { display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; padding:6px 6px; }
-  .weekday { text-align:center; font-weight:800; color:var(--muted); font-size:12px; }
+  .weekdays { 
+    display:grid; 
+    grid-template-columns: repeat(7, 1fr); 
+    gap:4px; 
+    padding:6px 2px; 
+  }
+  .weekday { 
+    text-align:center; 
+    font-weight:800; 
+    color:var(--muted); 
+    font-size:12px; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-  .days { display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; padding:6px; }
+  .days { 
+    display:grid; 
+    grid-template-columns: repeat(7, 1fr); 
+    gap:6px; 
+    padding:4px; 
+  }
   .day {
-    aspect-ratio:1/1; min-height:52px;
-    display:flex; align-items:center; justify-content:center;
-    border-radius:10px; font-weight:800; color:#0b1226;
-    cursor:pointer; user-select:none; position:relative; transition: transform 240ms, box-shadow 200ms;
+    aspect-ratio:1/1; 
+    min-height: 40px;
+    display:flex; 
+    align-items:center; 
+    justify-content:center;
+    border-radius:10px; 
+    font-weight:800; 
+    color:#0b1226;
+    cursor:pointer; 
+    user-select:none; 
+    position:relative; 
+    transition: transform 240ms, box-shadow 200ms;
     background:transparent;
+    font-size: 14px;
   }
   .day:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(12,18,30,0.06); }
   .other { color:#b7bcc1; cursor:default; transform:none; box-shadow:none; font-weight:700; }
@@ -216,57 +297,112 @@
 
   /* sidebar mini months + years */
   .sidebar {
-    width:220px;
+    width:100%;
     display:flex;
     flex-direction:column;
     gap:10px;
   }
   .mini-year {
     background:linear-gradient(180deg,#fff,#fbfcff);
-    padding:10px; border-radius:12px;
+    padding:10px; 
+    border-radius:12px;
     box-shadow: var(--shadow-sm);
-    display:grid; grid-template-columns: repeat(3,1fr); gap:8px;
+    display:grid; 
+    grid-template-columns: repeat(3,1fr); 
+    gap:8px;
   }
-  .mini-month { text-align:center; padding:8px; font-weight:800; border-radius:10px; cursor:pointer; }
-  .mini-month.active { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; transform: translateY(-3px); box-shadow: 0 12px 30px rgba(10,132,255,0.12); }
+  .mini-month { 
+    text-align:center; 
+    padding:8px; 
+    font-weight:800; 
+    border-radius:10px; 
+    cursor:pointer; 
+    font-size: 14px;
+  }
+  .mini-month.active { 
+    background: linear-gradient(90deg,var(--accent),var(--accent-2)); 
+    color:#fff; 
+    transform: translateY(-3px); 
+    box-shadow: 0 12px 30px rgba(10,132,255,0.12); 
+  }
 
-  .year-list { display:flex; gap:8px; flex-wrap:wrap; }
-  .year-chip { padding:8px 10px; border-radius:10px; background:linear-gradient(180deg,#fff,#f4f6fb); cursor:pointer; font-weight:800; }
-  .year-chip.active { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; transform: translateY(-3px); }
+  .year-list { 
+    display:flex; 
+    gap:6px; 
+    flex-wrap:wrap; 
+    width: 100%;
+  }
+  .year-chip { 
+    padding:8px 10px; 
+    border-radius:10px; 
+    background:linear-gradient(180deg,#fff,#f4f6fb); 
+    cursor:pointer; 
+    font-weight:800; 
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 14px;
+  }
+  .year-chip.active { 
+    background: linear-gradient(90deg,var(--accent),var(--accent-2)); 
+    color:#fff; 
+    transform: translateY(-3px); 
+  }
 
   /* footer */
-  .cal-footer { margin-top:8px; display:flex; justify-content:space-between; align-items:center; padding:8px 4px; color:var(--muted); font-size:13px; }
+  .cal-footer { 
+    margin-top:8px; 
+    display:flex; 
+    justify-content:space-between; 
+    align-items:center; 
+    padding:8px 4px; 
+    color:var(--muted); 
+    font-size:13px; 
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 
   /* sheet */
   .backdrop {
-    position:fixed; inset:0; z-index:1400; background:rgba(8,10,20,0.28); opacity:0; pointer-events:none; transition: opacity 220ms;
+    position:fixed; 
+    inset:0; 
+    z-index:1400; 
+    background:rgba(8,10,20,0.28); 
+    opacity:0; 
+    pointer-events:none; 
+    transition: opacity 220ms;
   }
   .backdrop.show { opacity:1; pointer-events:auto; }
 
   .sheet {
-    position:fixed; left:50%; bottom:0; z-index:1401;
-    transform: translate(-50%, 110%);
-    width:100%; max-width:720px;
-    border-radius: 16px 16px 6px 6px;
+    position:fixed; 
+    left:0; 
+    bottom:0; 
+    z-index:1401;
+    transform: translateY(110%);
+    width:100%;
+    border-radius: 16px 16px 0 0;
     background: linear-gradient(180deg, var(--card), #fbfdff);
     box-shadow: 0 40px 80px rgba(12,18,30,0.2);
     transition: transform 320ms cubic-bezier(.2,.9,.2,1), opacity 260ms;
     opacity:0;
-    padding:12px 14px 18px;
+    padding:12px 16px calc(18px + var(--sab, 0px));
     touch-action: none;
     max-height: 86svh;
     display:flex;
     flex-direction:column;
     gap:12px;
     overflow:auto;
+    box-sizing: border-box;
   }
-  .sheet.show { transform: translate(-50%, 0%); opacity:1; }
+  .sheet.show { transform: translateY(0%); opacity:1; }
 
   .grab { width:64px; height:6px; background:rgba(11,18,38,0.08); border-radius:999px; margin:6px auto 4px; }
 
-  .palette { display:flex; gap:10px; align-items:center; }
+  .palette { display:flex; gap:10px; align-items:center; justify-content: space-between; }
   .palette .color {
     width:44px; height:44px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; box-shadow: var(--shadow-sm);
+    flex: 1;
   }
   .palette .color .dot { width:28px; height:28px; border-radius:8px; }
   .pal-red .dot { background: linear-gradient(180deg,var(--clr-red), #e03a34); }
@@ -285,17 +421,57 @@
     resize:vertical;
     background:linear-gradient(180deg,#fff,#fbfdff);
     box-shadow: inset 0 -1px 0 rgba(0,0,0,0.02);
+    box-sizing: border-box;
   }
 
   .sheet-actions { display:flex; gap:10px; justify-content:flex-end; }
   .act-del { padding:10px 12px; border-radius:12px; background:transparent; border:1px solid rgba(11,18,38,0.06); font-weight:800; cursor:pointer; color:var(--muted); }
   .act-save { padding:10px 12px; border-radius:12px; background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; font-weight:900; cursor:pointer; box-shadow: 0 12px 30px rgba(10,132,255,0.14); }
 
-  /* small screens */
-  @media (max-width:880px){
-    .sidebar { width:100%; order:2; }
-    .main-pane { flex-direction:column; }
-    .sheet { max-width:100%; border-radius: 12px 12px 0 0; left:50%; }
+  /* Responsive adjustments */
+  @media (max-width: 480px) {
+    .screen {
+      padding: 12px;
+    }
+    
+    .day {
+      min-height: 36px;
+      font-size: 13px;
+    }
+    
+    .month-card, .year-chip, .mini-month {
+      font-size: 13px;
+    }
+    
+    .cal-footer {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .cal-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .cal-controls {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .main-pane {
+      flex-direction: row;
+    }
+    
+    .sidebar {
+      width: 220px;
+    }
+    
+    .calendar {
+      flex: 1;
+    }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -672,174 +848,3 @@
   function openSheetFor(key){
     const d = parseYmd(key);
     sheetTitle.textContent = d.toLocaleDateString(locale,{ day:'numeric', month:'long', year:'numeric' }).replace(/\u00A0/g,' ');
-    const existing = highlights[key] || { color:null, note:'' };
-    // set palette active
-    Array.from(palette.children).forEach(btn => btn.classList.toggle('selected', btn.dataset.color===existing.color));
-    desc.value = existing.note || '';
-    sheet._chosen = existing.color || null;
-    backdrop.classList.add('show'); backdrop.setAttribute('aria-hidden','false');
-    sheet.classList.add('show'); sheet.setAttribute('aria-hidden','false');
-    setTimeout(()=> desc.focus(), 260);
-  }
-
-  function closeSheet(){
-    sheet.classList.remove('show'); sheet.setAttribute('aria-hidden','true');
-    backdrop.classList.remove('show'); backdrop.setAttribute('aria-hidden','true');
-    sheet._chosen = null; selectedCellEl = null; activeKey = null;
-  }
-
-  // palette clicks
-  Array.from(palette.children).forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      const color = btn.dataset.color;
-      sheet._chosen = color;
-      Array.from(palette.children).forEach(b=> b.classList.toggle('active', b===btn));
-      // visual feedback
-      btn.animate([{ transform:'scale(1.06)'},{ transform:'scale(1)' }], { duration:200, easing:'cubic-bezier(.2,.9,.2,1)' });
-    });
-  });
-
-  // save
-  saveBtn.addEventListener('click', ()=> {
-    if (!activeKey) {
-      // if not set, try to set from selectedCellEl (rare)
-      if (!selectedCellEl) { closeSheet(); return; }
-    }
-    // activeKey must be set earlier
-    if (!activeKey) {
-      // attempt to compute from selectedCellEl text and view
-      // skip — safe guard
-      closeSheet(); return;
-    }
-    const note = desc.value.trim();
-    const color = sheet._chosen || null;
-    if (!color && !note) {
-      if (highlights[activeKey]) { delete highlights[activeKey]; saveHighlights(); }
-      if (selectedCellEl) clearHighlight(selectedCellEl);
-      // bounce nothing
-      closeSheet(); return;
-    }
-    highlights[activeKey] = { color, note };
-    saveHighlights();
-    // apply to DOM if visible
-    if (selectedCellEl) {
-      applyHighlight(selectedCellEl, highlights[activeKey]);
-      // spring animation
-      selectedCellEl.animate([
-        { transform:'scale(1.06) translateY(-6px)' },
-        { transform:'scale(0.98) translateY(3px)' },
-        { transform:'scale(1) translateY(0)' }
-      ], { duration:520, easing:'cubic-bezier(.2,.9,.2,1)' });
-    } else {
-      renderMonth(view.year, view.month);
-    }
-    closeSheet();
-  });
-
-  // delete
-  delBtn.addEventListener('click', ()=>{
-    if (!activeKey) { closeSheet(); return; }
-    if (highlights[activeKey]) { delete highlights[activeKey]; saveHighlights(); }
-    if (selectedCellEl) { clearHighlight(selectedCellEl); selectedCellEl.animate([{ opacity:0.6 },{ opacity:1 }], { duration:240 }); }
-    desc.value=''; sheet._chosen=null; Array.from(palette.children).forEach(b=> b.classList.remove('active'));
-    closeSheet();
-  });
-
-  // close on backdrop / escape
-  backdrop.addEventListener('click', ()=> closeSheet());
-  document.addEventListener('keydown', (e)=> { if (e.key==='Escape') closeSheet(); });
-
-  // sheet drag-to-dismiss (basic)
-  (function(){
-    let dragging=false, startY=0, startTransform=0;
-    sheet.addEventListener('pointerdown', (e)=> {
-      dragging=true; startY=e.clientY; sheet.setPointerCapture(e.pointerId);
-    });
-    sheet.addEventListener('pointermove', (e)=> {
-      if (!dragging) return;
-      const dy = Math.max(0, e.clientY - startY);
-      const pct = Math.min(1, dy / sheet.offsetHeight);
-      sheet.style.transform = `translate(-50%, ${pct*100}%)`;
-      backdrop.style.opacity = `${1 - Math.min(1, pct*1.2)}`;
-    });
-    sheet.addEventListener('pointerup', (e)=> {
-      if (!dragging) return;
-      dragging=false; sheet.releasePointerCapture(e.pointerId);
-      const dy = Math.max(0, e.clientY - startY);
-      if (dy > sheet.offsetHeight * 0.2) {
-        closeSheet();
-        sheet.style.transform=''; backdrop.style.opacity='';
-      } else {
-        sheet.style.transition='transform 220ms cubic-bezier(.2,.9,.2,1)';
-        sheet.style.transform='translate(-50%, 0%)';
-        backdrop.style.transition='opacity 220ms';
-        backdrop.style.opacity='1';
-        setTimeout(()=> { sheet.style.transition=''; sheet.style.transform=''; backdrop.style.transition=''; backdrop.style.opacity=''; }, 260);
-      }
-    });
-    sheet.addEventListener('pointercancel', ()=> { dragging=false; sheet.style.transform=''; backdrop.style.opacity=''; });
-  })();
-
-  // init selector UI and calendar
-  function init(){
-    // build months and years on selector screen
-    const monthNames = Array.from({length:12}, (_,i)=> new Date(2000,i,1).toLocaleString(locale,{ month:'short' }).replace('.',''));
-    monthNames.forEach((nm,i)=>{
-      const el = document.createElement('div'); el.className='month-card'; el.textContent=nm;
-      el.addEventListener('click', ()=> { view.month = i; updateSelectorActive(); });
-      monthsGrid.appendChild(el);
-    });
-
-    for(let y=MIN_YEAR;y<=MAX_YEAR;y++){
-      const el = document.createElement('div'); el.className='year-chip'; el.textContent=y;
-      el.addEventListener('click', ()=> { view.year=y; updateSelectorActive(); });
-      yearRow.appendChild(el);
-    }
-    updateSelectorActive();
-
-    // show initial screen
-    showScreen('select');
-  }
-
-  function updateSelectorActive(){
-    // months
-    const months = monthsGrid.querySelectorAll('.month-card');
-    months.forEach((m, idx)=> m.classList.toggle('active', idx===view.month));
-    // years
-    const years = yearRow.querySelectorAll('.year-chip');
-    years.forEach(y=> y.classList.toggle('active', Number(y.textContent)===view.year));
-  }
-
-  // Clicking a day sets activeKey based on view
-  // To allow gotoSelected to work after sheet closed, set activeKey when opening sheet
-  // But also expose API for debugging:
-  window.__paymentCalendar = {
-    highlights,
-    add(dateStr,color,note){ highlights[dateStr]={color,note}; saveHighlights(); renderMonth(view.year, view.month); },
-    remove(dateStr){ delete highlights[dateStr]; saveHighlights(); renderMonth(view.year, view.month); },
-    clearAll(){ highlights={}; saveHighlights(); renderMonth(view.year, view.month); }
-  };
-
-  // On calendar open, set activeKey to null until user clicks
-  openCalendarBtn.addEventListener('click', ()=> { activeKey=null; selectedCellEl=null; });
-
-  // When a day is clicked, activeKey set in renderMonth click handler
-  // But we also expose a helper in global for debugging
-  window.__openFor = function(dateStr){
-    const d = parseYmd(dateStr);
-    view.year = d.getFullYear(); view.month = d.getMonth();
-    renderMonth(view.year, view.month);
-    // find cell element
-    const cells = Array.from(daysGrid.querySelectorAll('.day')).filter(c => !c.classList.contains('other'));
-    const dayNum = d.getDate();
-    const target = cells.find(c => Number(c.textContent)===dayNum);
-    if (target){ selectedCellEl = target; activeKey = dateStr; openSheetFor(dateStr); }
-  };
-
-  // ensure initial setup on load
-  init();
-
-})();
-</script>
-</body>
-</html>
