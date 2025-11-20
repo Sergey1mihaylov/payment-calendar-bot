@@ -1,280 +1,625 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Генератор 0–100 — iOS style</title>
-  <style>
-    :root{
-      --bg:#f2f2f5;
-      --glass: rgba(255,255,255,0.7);
-      --accent: #0a84ff; /* iOS blue */
-      --muted: #6b6b73;
-      --shadow: 0 10px 30px rgba(10,10,10,0.12);
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Календарь 2020–2030 — iOS style</title>
+<style>
+  :root{
+    --bg:#f2f2f5;
+    --card:#ffffff;
+    --muted:#6b6b73;
+    --accent:#0a84ff;
+    --accent-2:#5ac8fa;
+    --shadow: 0 18px 40px rgba(10,10,20,0.12);
+    --radius:20px;
+  }
 
-    /* базовый экран */
-    html,body{
-      height:100%;
-      margin:0;
-      font-family: -apple-system, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: linear-gradient(180deg, #eff1f4 0%, var(--bg) 100%);
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      color:#111;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: -apple-system, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(180deg,#eef1f6 0%, var(--bg) 100%);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    color:#0b1226;
+  }
 
-    .card {
-      width: min(940px, 92vw);
-      max-width: 980px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(250,250,252,0.6));
-      border-radius: 26px;
-      padding: 48px;
-      box-shadow: var(--shadow);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:28px;
-      backdrop-filter: blur(10px) saturate(120%);
-      -webkit-backdrop-filter: blur(10px) saturate(120%);
-    }
+  .wrap {
+    width: min(980px, 96vw);
+    max-width:980px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(250,250,252,0.75));
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow);
+    position:relative;
+    overflow:hidden;
+    backdrop-filter: blur(8px) saturate(120%);
+  }
 
-    .title {
-      font-size:18px;
-      font-weight:600;
-      letter-spacing: -0.02em;
-      color: #0b1226;
-    }
+  .header {
+    display:flex;
+    align-items:center;
+    gap:18px;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
 
-    /* большая кнопка: в 2 раза больше чем предыдущая (примерно) */
-    .btn {
-      display:inline-grid;
-      place-items:center;
-      padding: 28px 64px; /* увеличено в 2 раза */
-      font-size: 44px;    /* увеличено в 2 раза */
-      font-weight:700;
-      border-radius: 22px;
-      border: none;
-      background: linear-gradient(180deg, #ffffff, #f7f8fb);
-      box-shadow: 0 14px 30px rgba(10,10,10,0.12), inset 0 -1px 0 rgba(0,0,0,0.02);
-      cursor:pointer;
-      transition: transform 200ms cubic-bezier(.2,.9,.2,1), box-shadow 180ms;
-      color: var(--accent);
-      user-select:none;
-    }
+  .left {
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
 
-    .btn:active {
-      transform: translateY(2px) scale(0.985);
-    }
+  .title {
+    font-size:18px;
+    font-weight:700;
+    letter-spacing:-0.02em;
+  }
 
-    .btn:disabled {
-      opacity:0.6;
-      cursor:default;
-      transform:none;
-    }
+  .controls {
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
 
-    /* цифровой дисплей: цифра в 5 раз больше чем прежняя 72 -> 360 */
-    .display {
-      width:100%;
-      max-width:920px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height: 420px;
-    }
+  .btn {
+    display:inline-grid;
+    place-items:center;
+    padding:10px 16px;
+    border-radius:12px;
+    border:none;
+    background: linear-gradient(180deg,#ffffff,#f4f6fb);
+    box-shadow: 0 8px 20px rgba(10,10,20,0.06), inset 0 -1px 0 rgba(0,0,0,0.02);
+    cursor:pointer;
+    transition: transform 180ms cubic-bezier(.2,.9,.2,1), box-shadow 160ms;
+    font-weight:700;
+    color:var(--accent);
+  }
 
-    #num {
-      font-weight:800;
-      font-size: clamp(160px, 30vw, 360px); /* responsive, up to 360px (5x72) */
-      line-height: 0.9;
-      color:#061025;
-      opacity:0;
-      transform: scale(0.4) translateY(12px);
-      will-change: transform, opacity;
-      text-shadow: 0 8px 30px rgba(10,20,40,0.12), 0 1px 0 rgba(255,255,255,0.25) inset;
-      transition: opacity 480ms cubic-bezier(.2,.9,.2,1), transform 680ms cubic-bezier(.2,.9,.2,1);
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      background: linear-gradient(180deg, #0b1226, #0b1226); /* solid look */
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: #061025;
-    }
+  .btn:active { transform: translateY(2px) scale(0.99); }
 
-    /* класс включающейся анимации */
-    .show {
-      opacity:1;
-      transform: scale(1) translateY(0);
-    }
+  .small {
+    padding:8px 12px;
+    font-size:14px;
+    border-radius:10px;
+  }
 
-    /* тонкая подпись */
-    .hint {
-      font-size:14px;
-      color:var(--muted);
-      margin-top: -6px;
-    }
+  .month-title {
+    font-size:20px;
+    font-weight:700;
+    min-width:220px;
+    text-align:center;
+  }
 
-    /* маленькая вспышка при появлении */
-    .burst {
-      position:absolute;
-      width:380px;
-      height:380px;
-      border-radius:50%;
-      pointer-events:none;
-      opacity:0;
-      transform: scale(0.4);
-      transition: opacity 420ms ease, transform 520ms cubic-bezier(.2,.9,.2,1);
-      filter: blur(20px);
-    }
+  .year-select{
+    padding:8px 12px;
+    border-radius:12px;
+    border:none;
+    background: linear-gradient(180deg,#fff,#f7f8fb);
+    font-weight:600;
+    color:#0b1226;
+    box-shadow: 0 6px 18px rgba(10,10,20,0.04);
+    cursor:pointer;
+  }
 
-    /* конфетка: легкие полоски в фоне */
-    .stripes {
-      position:absolute;
-      inset:0;
-      pointer-events:none;
-      opacity:0.06;
-      background-image:
-        linear-gradient(120deg, rgba(10,20,40,0.02) 10%, transparent 10%),
-        linear-gradient(60deg, rgba(10,20,40,0.02) 10%, transparent 10%);
-      background-size: 40px 40px;
-      border-radius:26px;
-    }
+  .main {
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
+  }
 
-    /* уменьшение движения для пользователей, которые его не хотят */
-    @media (prefers-reduced-motion: reduce) {
-      .btn, #num { transition: none; animation: none; transform: none !important; }
-    }
+  /* month calendar */
+  .calendar {
+    flex:1;
+    min-width:320px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(248,249,252,0.6));
+    border-radius:14px;
+    padding:18px;
+    box-shadow: 0 10px 24px rgba(10,10,20,0.04);
+    position:relative;
+    overflow:hidden;
+  }
 
-    /* responsive tweaks for small screens */
-    @media (max-width:480px){
-      .card { padding:28px; border-radius:18px; gap:18px; }
-      .btn { padding:20px 44px; font-size:34px; border-radius:16px; }
-      .display { min-height:280px; }
-      .burst { width:240px; height:240px; }
-    }
-  </style>
+  .weekdays { display:grid; grid-template-columns: repeat(7,1fr); gap:6px; margin-bottom:8px; }
+  .weekday {
+    font-size:13px;
+    color:var(--muted);
+    text-align:center;
+    font-weight:700;
+    padding:8px 6px;
+  }
+
+  .days {
+    display:grid;
+    grid-template-columns: repeat(7,1fr);
+    gap:8px;
+  }
+
+  .day {
+    aspect-ratio:1/1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:10px;
+    font-weight:700;
+    color:#0b1226;
+    background:transparent;
+    transition: transform 260ms cubic-bezier(.2,.9,.2,1), box-shadow 200ms, background 200ms;
+    cursor:pointer;
+    user-select:none;
+  }
+
+  .day:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 28px rgba(10,10,20,0.08);
+  }
+
+  .day.other {
+    color: #9aa0a6;
+    font-weight:600;
+    cursor:default;
+    transform:none;
+    box-shadow:none;
+  }
+
+  .day.today {
+    background: linear-gradient(180deg, rgba(10,132,255,0.12), rgba(10,132,255,0.06));
+    color: var(--accent);
+    box-shadow: 0 10px 24px rgba(10,132,255,0.08);
+  }
+
+  .day.selected {
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+    color: #fff;
+    transform: scale(1.05);
+    box-shadow: 0 16px 40px rgba(10,132,255,0.18);
+  }
+
+  /* sidebar: mini year view */
+  .sidebar {
+    width:260px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .mini-year {
+    background: linear-gradient(180deg,#fff,#fbfcff);
+    border-radius:12px;
+    padding:12px;
+    box-shadow: 0 8px 22px rgba(10,10,20,0.04);
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:8px;
+    max-height:420px;
+    overflow:auto;
+  }
+
+  .mini-month {
+    padding:8px;
+    border-radius:10px;
+    text-align:center;
+    cursor:pointer;
+    font-weight:700;
+    color:#0b1226;
+    transition: background 180ms, transform 160ms;
+  }
+
+  .mini-month:hover { transform: translateY(-6px); box-shadow: 0 10px 26px rgba(10,10,20,0.06); }
+  .mini-month.active {
+    background: linear-gradient(180deg,var(--accent),var(--accent-2));
+    color:#fff;
+  }
+
+  .year-list {
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .year-chip {
+    padding:8px 10px;
+    border-radius:10px;
+    background:linear-gradient(180deg,#fff,#f4f6fb);
+    cursor:pointer;
+    font-weight:700;
+    box-shadow: 0 6px 18px rgba(10,10,20,0.035);
+  }
+
+  .year-chip.active {
+    background: linear-gradient(180deg,var(--accent),var(--accent-2));
+    color:#fff;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(10,132,255,0.12);
+  }
+
+  /* footer */
+  .footer {
+    margin-top:16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .today-btn {
+    padding:8px 12px;
+    border-radius:12px;
+    border:none;
+    background: linear-gradient(180deg,#fff,#f4f6fb);
+    cursor:pointer;
+    font-weight:700;
+    color:var(--accent);
+  }
+
+  .legend { color:var(--muted); font-size:13px; }
+
+  /* animations */
+  .fade-slide {
+    transition: transform 320ms cubic-bezier(.2,.9,.2,1), opacity 280ms;
+  }
+
+  .month-anim-enter { transform: translateY(6px); opacity:0; }
+  .month-anim-enter-active { transform: translateY(0); opacity:1; }
+
+  /* reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition:none !important; animation:none !important; transform:none !important; }
+  }
+
+  /* small screens */
+  @media (max-width:880px){
+    .main { flex-direction:column; gap:14px; }
+    .sidebar { width:100%; order:2; }
+    .calendar { order:1; }
+    .wrap { padding:18px; }
+  }
+</style>
 </head>
 <body>
-  <div class="card" role="application" aria-label="Генератор случайного числа 0–100">
-    <div class="stripes" aria-hidden="true"></div>
-
-    <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
-      <div class="title">Генератор 0–100</div>
-      <div class="hint">Нажми кнопку — появится большое число с плавной анимацией</div>
+  <div class="wrap" role="application" aria-label="Календарь 2020–2030">
+    <div class="header">
+      <div class="left">
+        <div>
+          <div class="title">Календарь</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:6px;">Диапазон 2020 — 2030. Нажми месяц слева, чтобы перейти.</div>
+        </div>
+      </div>
+      <div class="controls" aria-hidden="false">
+        <button id="prev" class="btn small" title="Пред. месяц">‹</button>
+        <div class="month-title" id="monthTitle">Месяц Год</div>
+        <button id="next" class="btn small" title="След. месяц">›</button>
+        <select id="yearSelect" class="year-select" aria-label="Выбор года"></select>
+        <button id="reset" class="btn small" title="Сброс на сегодня">Сегодня</button>
+      </div>
     </div>
 
-    <button id="btn" class="btn" aria-controls="num" aria-label="Сгенерировать число">Сгенерировать</button>
+    <div class="main">
+      <div class="calendar" id="calendar" aria-live="polite">
+        <div class="weekdays" aria-hidden="true" id="weekdays"></div>
+        <div class="days fade-slide month-anim-enter-active" id="daysGrid"></div>
+      </div>
 
-    <div class="display" aria-hidden="false" style="position:relative;">
-      <!-- вспышка -->
-      <div id="burst" class="burst" aria-hidden="true"></div>
-      <div id="num" role="status" aria-live="polite">—</div>
+      <aside class="sidebar" aria-hidden="false">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-weight:800">Выбрать месяц</div>
+          <div style="color:var(--muted);font-size:13px">2020 — 2030</div>
+        </div>
+
+        <div class="mini-year" id="miniYear" role="list"></div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-weight:700">Годы</div>
+          <div class="year-list" id="yearList" role="list"></div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">
+      <div class="legend">Клик — выбрать дату. Двойной клик — быстро перейти на этот месяц.</div>
+      <div>
+        <button id="todayNav" class="today-btn">Перейти к выбранной дате</button>
+      </div>
     </div>
   </div>
 
-  <script>
-    (function(){
-      const btn = document.getElementById('btn');
-      const numEl = document.getElementById('num');
-      const burst = document.getElementById('burst');
+<script>
+(function(){
+  // Config
+  const MIN_YEAR = 2020;
+  const MAX_YEAR = 2030;
+  const locale = 'ru-RU';
+  const weekStartMonday = true; // неделя начинается с понедельника
 
-      // утилита для плавного интерполяционного счёта
-      function animateCount(from, to, duration, onTick, onDone){
-        const start = performance.now();
-        const delta = to - from;
-        if (delta === 0) { onTick(to); if (onDone) onDone(); return; }
+  // Elements
+  const monthTitle = document.getElementById('monthTitle');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const yearSelect = document.getElementById('yearSelect');
+  const resetBtn = document.getElementById('reset');
+  const daysGrid = document.getElementById('daysGrid');
+  const weekdaysEl = document.getElementById('weekdays');
+  const miniYear = document.getElementById('miniYear');
+  const yearList = document.getElementById('yearList');
+  const todayNav = document.getElementById('todayNav');
 
-        function step(ts){
-          const t = Math.min(1, (ts - start) / duration);
-          // easeOutCubic
-          const ease = 1 - Math.pow(1 - t, 3);
-          const value = Math.round(from + delta * ease);
-          onTick(value);
-          if (t < 1) requestAnimationFrame(step);
-          else if (onDone) onDone();
-        }
-        requestAnimationFrame(step);
+  // State
+  const today = new Date();
+  let view = { year: today.getFullYear(), month: today.getMonth() }; // month 0..11
+  if (view.year < MIN_YEAR) view.year = MIN_YEAR, view.month = 0;
+  if (view.year > MAX_YEAR) view.year = MAX_YEAR, view.month = 11;
+  let selectedDate = null;
+
+  // Utilities
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function formatMonthYear(y,m){
+    const d = new Date(y,m,1);
+    return d.toLocaleString(locale, { month: 'long', year:'numeric' }).replace(/\u00A0/g,' ');
+  }
+
+  function clearChildren(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+
+  // Build weekdays header
+  function buildWeekdays(){
+    clearChildren(weekdaysEl);
+    const names = [];
+    for (let i=0;i<7;i++){
+      const d = new Date(1970,0,4 + i + (weekStartMonday?1:0)); // Jan 4, 1970 is Sunday
+      names.push(d.toLocaleString(locale,{ weekday: 'short' }).replace('.',''));
+    }
+    // reorder for Monday start
+    const order = weekStartMonday ? [1,2,3,4,5,6,0] : [0,1,2,3,4,5,6];
+    for (const idx of order){
+      const el = document.createElement('div');
+      el.className = 'weekday';
+      el.textContent = names[idx];
+      weekdaysEl.appendChild(el);
+    }
+  }
+
+  // Render month grid
+  function renderMonth(y,m){
+    // animate out/in
+    daysGrid.classList.remove('month-anim-enter-active');
+    daysGrid.classList.add('month-anim-enter');
+    setTimeout(()=> {
+      daysGrid.classList.remove('month-anim-enter');
+      daysGrid.classList.add('month-anim-enter-active');
+    },10);
+
+    monthTitle.textContent = formatMonthYear(y,m);
+
+    clearChildren(daysGrid);
+    const firstDay = new Date(y,m,1);
+    const lastDay = new Date(y,m+1,0);
+    const daysInMonth = lastDay.getDate();
+    const startWeekday = firstDay.getDay(); // 0 Sun .. 6 Sat
+    // compute how many leading blanks depending on weekStartMonday
+    const leading = weekStartMonday ? (startWeekday === 0 ? 6 : startWeekday - 1) : startWeekday;
+    // previous month tail
+    const prevLast = new Date(y,m,0).getDate();
+
+    // fill leading days (previous month)
+    for (let i=0;i<leading;i++){
+      const d = prevLast - (leading - 1 - i);
+      const el = document.createElement('div');
+      el.className = 'day other';
+      el.textContent = d;
+      daysGrid.appendChild(el);
+    }
+
+    // fill current month days
+    for (let d=1; d<=daysInMonth; d++){
+      const el = document.createElement('div');
+      el.className = 'day';
+      el.textContent = d;
+      el.tabIndex = 0;
+      const dt = new Date(y,m,d);
+      // mark today
+      if (dt.getFullYear() === today.getFullYear() && dt.getMonth() === today.getMonth() && dt.getDate() === today.getDate()){
+        el.classList.add('today');
+        el.title = 'Сегодня';
+      }
+      // mark selected
+      if (selectedDate && dt.getFullYear()===selectedDate.getFullYear() && dt.getMonth()===selectedDate.getMonth() && dt.getDate()===selectedDate.getDate()){
+        el.classList.add('selected');
       }
 
-      // плавная вспышка
-      function playBurst(color = 'rgba(10,132,255,0.15)') {
-        burst.style.background = `radial-gradient(circle at 50% 40%, ${color}, rgba(255,255,255,0))`;
-        burst.style.opacity = '0.9';
-        burst.style.transform = 'scale(1)';
-        // quick reset
-        setTimeout(()=> {
-          burst.style.transition = 'opacity 520ms ease, transform 520ms cubic-bezier(.2,.9,.2,1)';
-          burst.style.opacity = '0';
-          burst.style.transform = 'scale(1.6)';
-        }, 60);
-        // cleanup after animation
-        setTimeout(()=> {
-          burst.style.transition = '';
-          burst.style.transform = 'scale(0.4)';
-          burst.style.opacity = '0';
-        }, 700);
-      }
+      // click behavior
+      el.addEventListener('click', (ev) => {
+        // select date
+        selectedDate = new Date(y,m,d);
+        // visual: remove other selected
+        const prev = daysGrid.querySelector('.day.selected');
+        if (prev) prev.classList.remove('selected');
+        el.classList.add('selected');
 
-      // безопасная генерация рандома целого 0..100
-      function randInt0to100(){
-        // crypto-safe if available
-        if (window.crypto && crypto.getRandomValues) {
-          const buf = new Uint32Array(1);
-          crypto.getRandomValues(buf);
-          return buf[0] % 101;
-        }
-        return Math.floor(Math.random() * 101);
-      }
+        // small pop animation
+        el.animate([
+          { transform: 'scale(1.06) translateY(-6px)' },
+          { transform: 'scale(0.98) translateY(2px)' },
+          { transform: 'scale(1) translateY(0)' }
+        ], { duration: 420, easing: 'cubic-bezier(.2,.9,.2,1)' });
 
-      // основная логика
-      btn.addEventListener('click', () => {
-        btn.disabled = true;
-        // генерируем число
-        const n = randInt0to100();
-
-        // play burst
-        playBurst();
-
-        // убрать класс show, чтобы можно было переанимировать
-        numEl.classList.remove('show');
-
-        // маленькая задержка, чтобы браузер применил стиль
-        requestAnimationFrame(()=> {
-          // сбрасываем содержимое на 0 для видимого счёта
-          numEl.textContent = '0';
-          // запускаем сам счёт
-          animateCount(0, n, 900, (value) => {
-            numEl.textContent = value;
-          }, ()=> {
-            // когда досчитали — включаем большую появляющуюся анимацию (появление + "пружина")
-            numEl.classList.add('show');
-            // небольшая "пружина" — дополнительный scale на короткое время
-            numEl.animate([
-              { transform: 'scale(1.08) translateY(-6px)' },
-              { transform: 'scale(0.98) translateY(2px)' },
-              { transform: 'scale(1) translateY(0)' }
-            ], {
-              duration: 520,
-              easing: 'cubic-bezier(.2,.9,.2,1)'
-            });
-            btn.disabled = false;
-          });
-        });
+        // if double click, jump to that month (no-op here but keep for UX)
       });
 
-      // начальное состояние: показываем 0 аккуратно
-      window.addEventListener('load', () => {
-        numEl.textContent = '—';
-        // маленький начальный поп-ин
-        setTimeout(()=> {
-          numEl.style.opacity = '0.08';
-          numEl.style.transform = 'scale(0.6) translateY(8px)';
-        }, 80);
+      // double click to jump (brief flash)
+      el.addEventListener('dblclick', ()=> {
+        // flash and re-render (simulate focus)
+        el.animate([{opacity:0.6},{opacity:1}],{duration:280});
       });
-    })();
-  </script>
+
+      daysGrid.appendChild(el);
+    }
+
+    // trailing days to fill grid to complete 7x6
+    const totalSoFar = leading + daysInMonth;
+    const trailing = (7*6) - totalSoFar;
+    for (let i=1;i<=trailing;i++){
+      const el = document.createElement('div');
+      el.className = 'day other';
+      el.textContent = i;
+      daysGrid.appendChild(el);
+    }
+  }
+
+  // Build year selector dropdown
+  function buildYearSelect(){
+    clearChildren(yearSelect);
+    for (let y=MIN_YEAR; y<=MAX_YEAR; y++){
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      yearSelect.appendChild(opt);
+    }
+    yearSelect.value = view.year;
+    yearSelect.addEventListener('change', ()=> {
+      view.year = Number(yearSelect.value);
+      // clamp month if out of range
+      if (view.year === MIN_YEAR && view.month < 0) view.month = 0;
+      if (view.year === MAX_YEAR && view.month > 11) view.month = 11;
+      renderMonth(view.year, view.month);
+      refreshMiniYear();
+      highlightYearChip();
+    });
+  }
+
+  // Build mini year months (clickable)
+  function buildMiniYear(){
+    clearChildren(miniYear);
+    const months = Array.from({length:12}, (_,i)=> {
+      const d = new Date(2000,i,1);
+      return d.toLocaleString(locale,{ month: 'short' }).replace('.','');
+    });
+    months.forEach((mName, i) => {
+      const el = document.createElement('div');
+      el.className = 'mini-month';
+      el.textContent = mName;
+      el.title = mName;
+      el.addEventListener('click', ()=> {
+        // jump view to selected month in current selected year
+        view.month = i;
+        renderMonth(view.year, view.month);
+        // mark active
+        refreshMiniYear();
+      });
+      miniYear.appendChild(el);
+    });
+  }
+
+  function refreshMiniYear(){
+    const nodes = miniYear.querySelectorAll('.mini-month');
+    nodes.forEach((n,idx)=>{
+      n.classList.toggle('active', idx === view.month);
+    });
+  }
+
+  // Build year chips list
+  function buildYearList(){
+    clearChildren(yearList);
+    for (let y=MIN_YEAR; y<=MAX_YEAR; y++){
+      const el = document.createElement('div');
+      el.className = 'year-chip';
+      el.textContent = y;
+      el.addEventListener('click', ()=> {
+        view.year = y;
+        yearSelect.value = y;
+        renderMonth(view.year, view.month);
+        refreshMiniYear();
+        highlightYearChip();
+      });
+      yearList.appendChild(el);
+    }
+    highlightYearChip();
+  }
+
+  function highlightYearChip(){
+    const chips = yearList.querySelectorAll('.year-chip');
+    chips.forEach(c => c.classList.toggle('active', Number(c.textContent) === view.year));
+  }
+
+  // Navigation handlers
+  prevBtn.addEventListener('click', ()=>{
+    view.month--;
+    if (view.month < 0) { view.year--; view.month = 11; if (view.year < MIN_YEAR) { view.year = MIN_YEAR; view.month = 0; } }
+    yearSelect.value = view.year;
+    renderMonth(view.year, view.month);
+    refreshMiniYear();
+    highlightYearChip();
+  });
+
+  nextBtn.addEventListener('click', ()=>{
+    view.month++;
+    if (view.month > 11) { view.year++; view.month = 0; if (view.year > MAX_YEAR) { view.year = MAX_YEAR; view.month = 11; } }
+    yearSelect.value = view.year;
+    renderMonth(view.year, view.month);
+    refreshMiniYear();
+    highlightYearChip();
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    view.year = today.getFullYear();
+    view.month = today.getMonth();
+    if (view.year < MIN_YEAR) view.year = MIN_YEAR, view.month = 0;
+    if (view.year > MAX_YEAR) view.year = MAX_YEAR, view.month = 11;
+    yearSelect.value = view.year;
+    renderMonth(view.year, view.month);
+    refreshMiniYear();
+    highlightYearChip();
+  });
+
+  todayNav.addEventListener('click', ()=>{
+    if (!selectedDate) {
+      alert('Сначала выберите дату в календаре.');
+      return;
+    }
+    view.year = selectedDate.getFullYear();
+    view.month = selectedDate.getMonth();
+    if (view.year < MIN_YEAR) view.year = MIN_YEAR, view.month = 0;
+    if (view.year > MAX_YEAR) view.year = MAX_YEAR, view.month = 11;
+    yearSelect.value = view.year;
+    renderMonth(view.year, view.month);
+    refreshMiniYear();
+    highlightYearChip();
+  });
+
+  // Keyboard small nav
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') prevBtn.click();
+    if (e.key === 'ArrowRight') nextBtn.click();
+  });
+
+  // initialization
+  buildWeekdays();
+  buildYearSelect();
+  buildMiniYear();
+  buildYearList();
+  renderMonth(view.year, view.month);
+  refreshMiniYear();
+  highlightYearChip();
+
+  // Accessibility: focus first day on load
+  setTimeout(()=> {
+    const first = daysGrid.querySelector('.day:not(.other)');
+    if (first) first.focus();
+  },300);
+
+  // Small helper: update title when month changes externally
+  const obs = new MutationObserver(()=> {
+    // keep monthTitle updated if needed (already updated in renderMonth)
+  });
+  obs.observe(daysGrid, { childList:true, subtree:true });
+
+  // Ensure selectedDate remains within bounds (if someone selects outside range)
+  // Not required but safe.
+
+})();
+</script>
 </body>
 </html>
