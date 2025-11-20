@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Календарь 2020–2030 — iOS style</title>
+<title>Календарь 2020–2030 — с цветными выделениями</title>
 <style>
   :root{
     --bg:#f2f2f5;
@@ -13,6 +13,12 @@
     --accent-2:#5ac8fa;
     --shadow: 0 18px 40px rgba(10,10,20,0.12);
     --radius:20px;
+
+    --clr-red: #ff3b30;
+    --clr-yellow: #ffcc00;
+    --clr-green: #34c759;
+    --clr-purple: #af52de;
+    --cell-size: calc((min(980px,96vw) - 60px) / 7);
   }
 
   html,body{
@@ -37,7 +43,7 @@
     padding: 28px;
     box-shadow: var(--shadow);
     position:relative;
-    overflow:hidden;
+    overflow:visible;
     backdrop-filter: blur(8px) saturate(120%);
   }
 
@@ -49,247 +55,157 @@
     margin-bottom:18px;
   }
 
-  .left {
-    display:flex;
-    align-items:center;
-    gap:14px;
-  }
+  .title { font-size:18px; font-weight:700; letter-spacing:-0.02em; }
+  .subtitle { color:var(--muted); font-size:13px; margin-top:6px; }
 
-  .title {
-    font-size:18px;
-    font-weight:700;
-    letter-spacing:-0.02em;
-  }
-
-  .controls {
-    display:flex;
-    gap:10px;
-    align-items:center;
-  }
-
+  .controls { display:flex; gap:10px; align-items:center; }
   .btn {
-    display:inline-grid;
-    place-items:center;
-    padding:10px 16px;
-    border-radius:12px;
-    border:none;
+    display:inline-grid; place-items:center;
+    padding:10px 16px; border-radius:12px; border:none;
     background: linear-gradient(180deg,#ffffff,#f4f6fb);
     box-shadow: 0 8px 20px rgba(10,10,20,0.06), inset 0 -1px 0 rgba(0,0,0,0.02);
-    cursor:pointer;
-    transition: transform 180ms cubic-bezier(.2,.9,.2,1), box-shadow 160ms;
-    font-weight:700;
-    color:var(--accent);
+    cursor:pointer; transition: transform 180ms cubic-bezier(.2,.9,.2,1), box-shadow 160ms;
+    font-weight:700; color:var(--accent);
   }
-
   .btn:active { transform: translateY(2px) scale(0.99); }
+  .small { padding:8px 12px; font-size:14px; border-radius:10px; }
 
-  .small {
-    padding:8px 12px;
-    font-size:14px;
-    border-radius:10px;
-  }
+  .month-title { font-size:20px; font-weight:700; min-width:220px; text-align:center; }
 
-  .month-title {
-    font-size:20px;
-    font-weight:700;
-    min-width:220px;
-    text-align:center;
-  }
+  .main { display:flex; gap:20px; align-items:flex-start; }
 
-  .year-select{
-    padding:8px 12px;
-    border-radius:12px;
-    border:none;
-    background: linear-gradient(180deg,#fff,#f7f8fb);
-    font-weight:600;
-    color:#0b1226;
-    box-shadow: 0 6px 18px rgba(10,10,20,0.04);
-    cursor:pointer;
-  }
-
-  .main {
-    display:flex;
-    gap:20px;
-    align-items:flex-start;
-  }
-
-  /* month calendar */
   .calendar {
-    flex:1;
-    min-width:320px;
+    flex:1; min-width:320px;
     background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(248,249,252,0.6));
-    border-radius:14px;
-    padding:18px;
-    box-shadow: 0 10px 24px rgba(10,10,20,0.04);
-    position:relative;
-    overflow:hidden;
+    border-radius:14px; padding:18px; box-shadow: 0 10px 24px rgba(10,10,20,0.04);
+    position:relative; overflow:hidden;
   }
 
   .weekdays { display:grid; grid-template-columns: repeat(7,1fr); gap:6px; margin-bottom:8px; }
-  .weekday {
-    font-size:13px;
-    color:var(--muted);
-    text-align:center;
-    font-weight:700;
-    padding:8px 6px;
-  }
+  .weekday { font-size:13px; color:var(--muted); text-align:center; font-weight:700; padding:8px 6px; }
 
-  .days {
-    display:grid;
-    grid-template-columns: repeat(7,1fr);
-    gap:8px;
-  }
-
+  .days { display:grid; grid-template-columns: repeat(7,1fr); gap:8px; }
   .day {
     aspect-ratio:1/1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:10px;
-    font-weight:700;
-    color:#0b1226;
-    background:transparent;
-    transition: transform 260ms cubic-bezier(.2,.9,.2,1), box-shadow 200ms, background 200ms;
-    cursor:pointer;
-    user-select:none;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:10px; font-weight:700; color:#0b1226;
+    background:transparent; transition: transform 260ms cubic-bezier(.2,.9,.2,1), box-shadow 200ms, background 200ms;
+    cursor:pointer; user-select:none; position:relative; overflow:visible;
   }
 
-  .day:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 28px rgba(10,10,20,0.08);
-  }
-
-  .day.other {
-    color: #9aa0a6;
-    font-weight:600;
-    cursor:default;
-    transform:none;
-    box-shadow:none;
-  }
-
+  .day:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(10,10,20,0.08); }
+  .day.other { color: #9aa0a6; font-weight:600; cursor:default; transform:none; box-shadow:none; }
   .day.today {
     background: linear-gradient(180deg, rgba(10,132,255,0.12), rgba(10,132,255,0.06));
-    color: var(--accent);
-    box-shadow: 0 10px 24px rgba(10,132,255,0.08);
+    color: var(--accent); box-shadow: 0 10px 24px rgba(10,132,255,0.08);
   }
 
-  .day.selected {
-    background: linear-gradient(180deg, var(--accent), var(--accent-2));
-    color: #fff;
-    transform: scale(1.05);
-    box-shadow: 0 16px 40px rgba(10,132,255,0.18);
+  /* color markers (subtle) */
+  .day .marker {
+    position:absolute; inset:auto 10% 10% 10%; height:8px; border-radius:6px; opacity:0.95;
+    transition: transform 320ms, opacity 220ms;
   }
 
-  /* sidebar: mini year view */
-  .sidebar {
-    width:260px;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-  }
-
-  .mini-year {
-    background: linear-gradient(180deg,#fff,#fbfcff);
-    border-radius:12px;
-    padding:12px;
-    box-shadow: 0 8px 22px rgba(10,10,20,0.04);
-    display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap:8px;
-    max-height:420px;
-    overflow:auto;
-  }
-
-  .mini-month {
-    padding:8px;
-    border-radius:10px;
-    text-align:center;
-    cursor:pointer;
-    font-weight:700;
-    color:#0b1226;
-    transition: background 180ms, transform 160ms;
-  }
-
-  .mini-month:hover { transform: translateY(-6px); box-shadow: 0 10px 26px rgba(10,10,20,0.06); }
-  .mini-month.active {
-    background: linear-gradient(180deg,var(--accent),var(--accent-2));
+  /* selected full-fill style for more visible color */
+  .day.colored {
     color:#fff;
+    transform: none;
   }
 
-  .year-list {
+  .day.colored .marker { display:none; }
+
+  /* actual color background styles */
+  .color-red { background: linear-gradient(180deg,var(--clr-red), #e03a34); box-shadow: 0 16px 40px rgba(255,59,48,0.14); color:#fff; }
+  .color-yellow { background: linear-gradient(180deg,var(--clr-yellow), #f2b800); box-shadow: 0 16px 40px rgba(255,204,0,0.12); color:#111; }
+  .color-green { background: linear-gradient(180deg,var(--clr-green), #2fb84a); box-shadow: 0 16px 40px rgba(52,199,89,0.12); color:#fff; }
+  .color-purple { background: linear-gradient(180deg,var(--clr-purple), #9b3bd6); box-shadow: 0 16px 40px rgba(175,82,222,0.12); color:#fff; }
+
+  /* for not full fill, small pill marker */
+  .marker.red { background: linear-gradient(90deg,var(--clr-red), #e03a34); }
+  .marker.yellow { background: linear-gradient(90deg,var(--clr-yellow), #f2b800); }
+  .marker.green { background: linear-gradient(90deg,var(--clr-green), #2fb84a); }
+  .marker.purple { background: linear-gradient(90deg,var(--clr-purple), #9b3bd6); }
+
+  .sidebar { width:260px; display:flex; flex-direction:column; gap:12px; }
+
+  .mini-year { background: linear-gradient(180deg,#fff,#fbfcff); border-radius:12px; padding:12px; box-shadow: 0 8px 22px rgba(10,10,20,0.04); display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; max-height:420px; overflow:auto; }
+  .mini-month { padding:8px; border-radius:10px; text-align:center; cursor:pointer; font-weight:700; color:#0b1226; transition: background 180ms, transform 160ms; }
+  .mini-month.active { background: linear-gradient(180deg,var(--accent),var(--accent-2)); color:#fff; }
+
+  .year-list { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .year-chip { padding:8px 10px; border-radius:10px; background:linear-gradient(180deg,#fff,#f4f6fb); cursor:pointer; font-weight:700; box-shadow: 0 6px 18px rgba(10,10,20,0.035); }
+  .year-chip.active { background: linear-gradient(180deg,var(--accent),var(--accent-2)); color:#fff; transform: translateY(-3px); box-shadow: 0 12px 30px rgba(10,132,255,0.12); }
+
+  .footer { margin-top:16px; display:flex; justify-content:space-between; align-items:center; }
+  .today-btn { padding:8px 12px; border-radius:12px; border:none; background: linear-gradient(180deg,#fff,#f4f6fb); cursor:pointer; font-weight:700; color:var(--accent); }
+
+  /* popup color picker */
+  .picker {
+    position:fixed;
+    z-index:1200;
     display:flex;
-    gap:8px;
-    flex-wrap:wrap;
+    gap:10px;
+    padding:10px;
+    border-radius:14px;
+    background: linear-gradient(180deg,#ffffff,#f7f8fb);
+    box-shadow: 0 14px 40px rgba(10,10,20,0.16);
+    transform-origin: center top;
+    opacity:0;
+    transform: translateY(6px) scale(0.96);
+    transition: transform 220ms cubic-bezier(.2,.9,.2,1), opacity 180ms;
+    pointer-events:none;
     align-items:center;
   }
 
-  .year-chip {
-    padding:8px 10px;
-    border-radius:10px;
-    background:linear-gradient(180deg,#fff,#f4f6fb);
-    cursor:pointer;
-    font-weight:700;
-    box-shadow: 0 6px 18px rgba(10,10,20,0.035);
+  .picker.show { opacity:1; transform: translateY(0) scale(1); pointer-events:auto; }
+
+  .color-btn {
+    width:44px; height:44px; border-radius:12px; border:none; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    box-shadow: 0 8px 20px rgba(10,10,20,0.06); transition: transform 160ms;
+  }
+  .color-btn:active { transform: translateY(2px) scale(0.98); }
+
+  .color-red .dot { width:28px; height:28px; border-radius:8px; background: linear-gradient(180deg,var(--clr-red), #e03a34); box-shadow: inset 0 -2px rgba(0,0,0,0.05); }
+  .color-yellow .dot { width:28px; height:28px; border-radius:8px; background: linear-gradient(180deg,var(--clr-yellow), #f2b800); }
+  .color-green .dot { width:28px; height:28px; border-radius:8px; background: linear-gradient(180deg,var(--clr-green), #2fb84a); }
+  .color-purple .dot { width:28px; height:28px; border-radius:8px; background: linear-gradient(180deg,var(--clr-purple), #9b3bd6); }
+
+  .clear-btn { padding:6px 10px; border-radius:10px; background:transparent; border:1px solid rgba(11,18,38,0.06); font-weight:700; cursor:pointer; color:var(--muted); }
+
+  /* small tooltip caret */
+  .picker::after {
+    content: '';
+    position:absolute;
+    top:-8px; left:calc(50% - 8px);
+    width:16px; height:8px;
+    background: transparent;
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+    filter: drop-shadow(0 -1px 0 rgba(0,0,0,0.02));
   }
 
-  .year-chip.active {
-    background: linear-gradient(180deg,var(--accent),var(--accent-2));
-    color:#fff;
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(10,132,255,0.12);
-  }
-
-  /* footer */
-  .footer {
-    margin-top:16px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-  }
-
-  .today-btn {
-    padding:8px 12px;
-    border-radius:12px;
-    border:none;
-    background: linear-gradient(180deg,#fff,#f4f6fb);
-    cursor:pointer;
-    font-weight:700;
-    color:var(--accent);
-  }
-
-  .legend { color:var(--muted); font-size:13px; }
-
-  /* animations */
-  .fade-slide {
-    transition: transform 320ms cubic-bezier(.2,.9,.2,1), opacity 280ms;
-  }
-
-  .month-anim-enter { transform: translateY(6px); opacity:0; }
-  .month-anim-enter-active { transform: translateY(0); opacity:1; }
-
-  /* reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    * { transition:none !important; animation:none !important; transform:none !important; }
-  }
-
-  /* small screens */
+  /* mobile tweaks */
   @media (max-width:880px){
     .main { flex-direction:column; gap:14px; }
     .sidebar { width:100%; order:2; }
     .calendar { order:1; }
     .wrap { padding:18px; }
+    .picker { position: absolute; left:50%; transform: translate(-50%,0) scale(1); top: 12px; }
   }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition: none !important; animation:none !important; transform:none !important; }
+  }
+
 </style>
 </head>
 <body>
-  <div class="wrap" role="application" aria-label="Календарь 2020–2030">
+  <div class="wrap" role="application" aria-label="Календарь 2020–2030 с цветными выделениями">
     <div class="header">
-      <div class="left">
-        <div>
-          <div class="title">Календарь</div>
-          <div style="font-size:13px;color:var(--muted);margin-top:6px;">Диапазон 2020 — 2030. Нажми месяц слева, чтобы перейти.</div>
-        </div>
+      <div>
+        <div class="title">Календарь</div>
+        <div class="subtitle">Диапазон 2020 — 2030. Кликни по дате → выбери цвет.</div>
       </div>
+
       <div class="controls" aria-hidden="false">
         <button id="prev" class="btn small" title="Пред. месяц">‹</button>
         <div class="month-title" id="monthTitle">Месяц Год</div>
@@ -321,11 +237,20 @@
     </div>
 
     <div class="footer">
-      <div class="legend">Клик — выбрать дату. Двойной клик — быстро перейти на этот месяц.</div>
+      <div class="legend">Клик — выбрать дату и открыть палитру. Сохранено локально.</div>
       <div>
         <button id="todayNav" class="today-btn">Перейти к выбранной дате</button>
       </div>
     </div>
+  </div>
+
+  <!-- picker -->
+  <div id="picker" class="picker" role="dialog" aria-hidden="true" aria-label="Выбор цвета">
+    <button class="color-btn color-red" data-color="red" title="Красный"><span class="dot" aria-hidden="true"></span></button>
+    <button class="color-btn color-yellow" data-color="yellow" title="Жёлтый"><span class="dot" aria-hidden="true"></span></button>
+    <button class="color-btn color-green" data-color="green" title="Зелёный"><span class="dot" aria-hidden="true"></span></button>
+    <button class="color-btn color-purple" data-color="purple" title="Фиолетовый"><span class="dot" aria-hidden="true"></span></button>
+    <button id="clearColor" class="clear-btn" title="Очистить цвет">Очистить</button>
   </div>
 
 <script>
@@ -334,7 +259,8 @@
   const MIN_YEAR = 2020;
   const MAX_YEAR = 2030;
   const locale = 'ru-RU';
-  const weekStartMonday = true; // неделя начинается с понедельника
+  const weekStartMonday = true;
+  const STORAGE_KEY = 'paymentCalendar.highlights';
 
   // Elements
   const monthTitle = document.getElementById('monthTitle');
@@ -347,32 +273,52 @@
   const miniYear = document.getElementById('miniYear');
   const yearList = document.getElementById('yearList');
   const todayNav = document.getElementById('todayNav');
+  const picker = document.getElementById('picker');
+  const clearBtn = document.getElementById('clearColor');
+  const colorButtons = Array.from(picker.querySelectorAll('.color-btn'));
 
   // State
   const today = new Date();
-  let view = { year: today.getFullYear(), month: today.getMonth() }; // month 0..11
+  let view = { year: today.getFullYear(), month: today.getMonth() };
   if (view.year < MIN_YEAR) view.year = MIN_YEAR, view.month = 0;
   if (view.year > MAX_YEAR) view.year = MAX_YEAR, view.month = 11;
-  let selectedDate = null;
+  let selectedDate = null; // Date object of the clicked cell
+  let lastClickedCell = null; // DOM element
+  // highlights: { "YYYY-MM-DD": "red" | "yellow" | "green" | "purple" }
+  let highlights = loadHighlights();
 
   // Utilities
   function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function ymd(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; } // month 0-based
+  function parseYmd(s){
+    const [y,m,d] = s.split('-').map(Number);
+    return new Date(y, m-1, d);
+  }
   function formatMonthYear(y,m){
     const d = new Date(y,m,1);
     return d.toLocaleString(locale, { month: 'long', year:'numeric' }).replace(/\u00A0/g,' ');
   }
-
   function clearChildren(el){ while(el.firstChild) el.removeChild(el.firstChild); }
 
-  // Build weekdays header
+  // Storage
+  function loadHighlights(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch(e){ return {}; }
+  }
+  function saveHighlights(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(highlights)); } catch(e){}
+  }
+
+  // Weekdays header
   function buildWeekdays(){
     clearChildren(weekdaysEl);
     const names = [];
     for (let i=0;i<7;i++){
-      const d = new Date(1970,0,4 + i + (weekStartMonday?1:0)); // Jan 4, 1970 is Sunday
+      const d = new Date(1970,0,4 + i + (weekStartMonday?1:0));
       names.push(d.toLocaleString(locale,{ weekday: 'short' }).replace('.',''));
     }
-    // reorder for Monday start
     const order = weekStartMonday ? [1,2,3,4,5,6,0] : [0,1,2,3,4,5,6];
     for (const idx of order){
       const el = document.createElement('div');
@@ -382,29 +328,24 @@
     }
   }
 
-  // Render month grid
+  // Render month
   function renderMonth(y,m){
-    // animate out/in
+    // animate classes
     daysGrid.classList.remove('month-anim-enter-active');
     daysGrid.classList.add('month-anim-enter');
-    setTimeout(()=> {
-      daysGrid.classList.remove('month-anim-enter');
-      daysGrid.classList.add('month-anim-enter-active');
-    },10);
+    setTimeout(()=> { daysGrid.classList.remove('month-anim-enter'); daysGrid.classList.add('month-anim-enter-active'); }, 10);
 
     monthTitle.textContent = formatMonthYear(y,m);
-
     clearChildren(daysGrid);
+
     const firstDay = new Date(y,m,1);
     const lastDay = new Date(y,m+1,0);
     const daysInMonth = lastDay.getDate();
-    const startWeekday = firstDay.getDay(); // 0 Sun .. 6 Sat
-    // compute how many leading blanks depending on weekStartMonday
+    const startWeekday = firstDay.getDay();
     const leading = weekStartMonday ? (startWeekday === 0 ? 6 : startWeekday - 1) : startWeekday;
-    // previous month tail
     const prevLast = new Date(y,m,0).getDate();
 
-    // fill leading days (previous month)
+    // leading (previous month)
     for (let i=0;i<leading;i++){
       const d = prevLast - (leading - 1 - i);
       const el = document.createElement('div');
@@ -413,52 +354,40 @@
       daysGrid.appendChild(el);
     }
 
-    // fill current month days
+    // current month
     for (let d=1; d<=daysInMonth; d++){
       const el = document.createElement('div');
       el.className = 'day';
       el.textContent = d;
       el.tabIndex = 0;
       const dt = new Date(y,m,d);
+      const key = ymd(y,m,d);
+
+      // apply highlight if exists
+      if (highlights[key]) {
+        applyColorToCell(el, highlights[key]);
+      } else {
+        // small marker (if no full color) - optional; we will rely on marker only for other months
+      }
+
       // mark today
       if (dt.getFullYear() === today.getFullYear() && dt.getMonth() === today.getMonth() && dt.getDate() === today.getDate()){
         el.classList.add('today');
         el.title = 'Сегодня';
       }
-      // mark selected
-      if (selectedDate && dt.getFullYear()===selectedDate.getFullYear() && dt.getMonth()===selectedDate.getMonth() && dt.getDate()===selectedDate.getDate()){
-        el.classList.add('selected');
-      }
 
-      // click behavior
+      // click behavior: open picker near element
       el.addEventListener('click', (ev) => {
-        // select date
+        ev.stopPropagation();
         selectedDate = new Date(y,m,d);
-        // visual: remove other selected
-        const prev = daysGrid.querySelector('.day.selected');
-        if (prev) prev.classList.remove('selected');
-        el.classList.add('selected');
-
-        // small pop animation
-        el.animate([
-          { transform: 'scale(1.06) translateY(-6px)' },
-          { transform: 'scale(0.98) translateY(2px)' },
-          { transform: 'scale(1) translateY(0)' }
-        ], { duration: 420, easing: 'cubic-bezier(.2,.9,.2,1)' });
-
-        // if double click, jump to that month (no-op here but keep for UX)
-      });
-
-      // double click to jump (brief flash)
-      el.addEventListener('dblclick', ()=> {
-        // flash and re-render (simulate focus)
-        el.animate([{opacity:0.6},{opacity:1}],{duration:280});
+        lastClickedCell = el;
+        openPickerOver(el, selectedDate);
       });
 
       daysGrid.appendChild(el);
     }
 
-    // trailing days to fill grid to complete 7x6
+    // trailing days to fill 6 rows
     const totalSoFar = leading + daysInMonth;
     const trailing = (7*6) - totalSoFar;
     for (let i=1;i<=trailing;i++){
@@ -469,7 +398,121 @@
     }
   }
 
-  // Build year selector dropdown
+  // Apply color styling to cell element
+  function applyColorToCell(cellEl, color){
+    // remove previous color classes
+    cellEl.classList.remove('color-red','color-yellow','color-green','color-purple','colored');
+    // remove marker if exists
+    const existingMarker = cellEl.querySelector('.marker');
+    if (existingMarker) existingMarker.remove();
+
+    if (!color) return;
+    // for strong visual we fill the cell: add color-xxx class and 'colored'
+    cellEl.classList.add('color-'+color, 'colored');
+    cellEl.setAttribute('data-color', color);
+  }
+
+  // Remove color from cell (clear)
+  function clearColorFromCell(cellEl){
+    cellEl.classList.remove('color-red','color-yellow','color-green','color-purple','colored');
+    cellEl.removeAttribute('data-color');
+    const existingMarker = cellEl.querySelector('.marker');
+    if (existingMarker) existingMarker.remove();
+  }
+
+  // Open picker positioned near a day cell
+  function openPickerOver(cellEl, dateObj){
+    // compute bounding
+    const rect = cellEl.getBoundingClientRect();
+    const pickerRect = picker.getBoundingClientRect();
+    const viewportW = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    const viewportH = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+
+    // default place above cell
+    let top = rect.top - pickerRect.height - 12;
+    let left = rect.left + (rect.width/2) - (pickerRect.width/2);
+
+    // if not enough space above, place below
+    if (top < 12) top = rect.bottom + 12;
+
+    // keep inside viewport horizontally
+    if (left < 12) left = 12;
+    if (left + pickerRect.width > viewportW - 12) left = viewportW - pickerRect.width - 12;
+
+    // set transform origin for nicer pop
+    picker.style.left = left + 'px';
+    picker.style.top = top + 'px';
+    picker.setAttribute('aria-hidden', 'false');
+    setTimeout(()=> picker.classList.add('show'), 10);
+
+    // attach handlers to color buttons (one-time)
+    colorButtons.forEach(btn => {
+      btn.onclick = (ev) => {
+        ev.stopPropagation();
+        const color = btn.dataset.color;
+        applyColorSelectionToDate(dateObj, color);
+        closePicker();
+      };
+    });
+
+    clearBtn.onclick = (ev) => {
+      ev.stopPropagation();
+      removeColorFromDate(dateObj);
+      closePicker();
+    };
+
+    // allow clicking outside to close
+    setTimeout(()=> { document.addEventListener('click', onDocClickClose); }, 60);
+  }
+
+  function onDocClickClose(e){
+    // if click inside picker, ignore
+    if (picker.contains(e.target)) return;
+    closePicker();
+  }
+
+  function closePicker(){
+    picker.classList.remove('show');
+    picker.setAttribute('aria-hidden', 'true');
+    document.removeEventListener('click', onDocClickClose);
+  }
+
+  // Color operations for a date (Date obj)
+  function applyColorSelectionToDate(dateObj, color){
+    const y = dateObj.getFullYear(), m = dateObj.getMonth(), d = dateObj.getDate();
+    const key = ymd(y,m,d);
+    highlights[key] = color;
+    saveHighlights();
+    // update the DOM cell in current grid if visible
+    if (lastClickedCell) {
+      applyColorToCell(lastClickedCell, color);
+      // small pop animation
+      lastClickedCell.animate([
+        { transform: 'scale(1.05) translateY(-6px)' },
+        { transform: 'scale(0.98) translateY(2px)' },
+        { transform: 'scale(1) translateY(0)' }
+      ], { duration: 420, easing: 'cubic-bezier(.2,.9,.2,1)' });
+    } else {
+      // if not visible, re-render month
+      renderMonth(view.year, view.month);
+    }
+  }
+
+  function removeColorFromDate(dateObj){
+    const y = dateObj.getFullYear(), m = dateObj.getMonth(), d = dateObj.getDate();
+    const key = ymd(y,m,d);
+    if (highlights[key]) {
+      delete highlights[key];
+      saveHighlights();
+    }
+    if (lastClickedCell) {
+      clearColorFromCell(lastClickedCell);
+    } else {
+      renderMonth(view.year, view.month);
+    }
+  }
+
+  // Build year select
   function buildYearSelect(){
     clearChildren(yearSelect);
     for (let y=MIN_YEAR; y<=MAX_YEAR; y++){
@@ -481,16 +524,13 @@
     yearSelect.value = view.year;
     yearSelect.addEventListener('change', ()=> {
       view.year = Number(yearSelect.value);
-      // clamp month if out of range
       if (view.year === MIN_YEAR && view.month < 0) view.month = 0;
       if (view.year === MAX_YEAR && view.month > 11) view.month = 11;
-      renderMonth(view.year, view.month);
-      refreshMiniYear();
-      highlightYearChip();
+      renderMonth(view.year, view.month); refreshMiniYear(); highlightYearChip();
     });
   }
 
-  // Build mini year months (clickable)
+  // mini year months
   function buildMiniYear(){
     clearChildren(miniYear);
     const months = Array.from({length:12}, (_,i)=> {
@@ -503,10 +543,8 @@
       el.textContent = mName;
       el.title = mName;
       el.addEventListener('click', ()=> {
-        // jump view to selected month in current selected year
         view.month = i;
         renderMonth(view.year, view.month);
-        // mark active
         refreshMiniYear();
       });
       miniYear.appendChild(el);
@@ -515,12 +553,9 @@
 
   function refreshMiniYear(){
     const nodes = miniYear.querySelectorAll('.mini-month');
-    nodes.forEach((n,idx)=>{
-      n.classList.toggle('active', idx === view.month);
-    });
+    nodes.forEach((n,idx)=> n.classList.toggle('active', idx === view.month));
   }
 
-  // Build year chips list
   function buildYearList(){
     clearChildren(yearList);
     for (let y=MIN_YEAR; y<=MAX_YEAR; y++){
@@ -544,80 +579,61 @@
     chips.forEach(c => c.classList.toggle('active', Number(c.textContent) === view.year));
   }
 
-  // Navigation handlers
-  prevBtn.addEventListener('click', ()=>{
+  // nav handlers
+  prevBtn.addEventListener('click', ()=> {
     view.month--;
     if (view.month < 0) { view.year--; view.month = 11; if (view.year < MIN_YEAR) { view.year = MIN_YEAR; view.month = 0; } }
     yearSelect.value = view.year;
-    renderMonth(view.year, view.month);
-    refreshMiniYear();
-    highlightYearChip();
+    renderMonth(view.year, view.month); refreshMiniYear(); highlightYearChip();
   });
 
-  nextBtn.addEventListener('click', ()=>{
+  nextBtn.addEventListener('click', ()=> {
     view.month++;
     if (view.month > 11) { view.year++; view.month = 0; if (view.year > MAX_YEAR) { view.year = MAX_YEAR; view.month = 11; } }
     yearSelect.value = view.year;
-    renderMonth(view.year, view.month);
-    refreshMiniYear();
-    highlightYearChip();
+    renderMonth(view.year, view.month); refreshMiniYear(); highlightYearChip();
   });
 
-  resetBtn.addEventListener('click', ()=>{
-    view.year = today.getFullYear();
-    view.month = today.getMonth();
+  resetBtn.addEventListener('click', ()=> {
+    view.year = today.getFullYear(); view.month = today.getMonth();
     if (view.year < MIN_YEAR) view.year = MIN_YEAR, view.month = 0;
     if (view.year > MAX_YEAR) view.year = MAX_YEAR, view.month = 11;
     yearSelect.value = view.year;
-    renderMonth(view.year, view.month);
-    refreshMiniYear();
-    highlightYearChip();
+    renderMonth(view.year, view.month); refreshMiniYear(); highlightYearChip();
   });
 
-  todayNav.addEventListener('click', ()=>{
-    if (!selectedDate) {
-      alert('Сначала выберите дату в календаре.');
-      return;
-    }
-    view.year = selectedDate.getFullYear();
-    view.month = selectedDate.getMonth();
+  todayNav.addEventListener('click', ()=> {
+    if (!selectedDate) { alert('Сначала выберите дату в календаре.'); return; }
+    view.year = selectedDate.getFullYear(); view.month = selectedDate.getMonth();
     if (view.year < MIN_YEAR) view.year = MIN_YEAR, view.month = 0;
     if (view.year > MAX_YEAR) view.year = MAX_YEAR, view.month = 11;
     yearSelect.value = view.year;
-    renderMonth(view.year, view.month);
-    refreshMiniYear();
-    highlightYearChip();
+    renderMonth(view.year, view.month); refreshMiniYear(); highlightYearChip();
   });
 
-  // Keyboard small nav
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') prevBtn.click();
-    if (e.key === 'ArrowRight') nextBtn.click();
-  });
+  // keyboard nav
+  document.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') prevBtn.click(); if (e.key === 'ArrowRight') nextBtn.click(); });
 
   // initialization
-  buildWeekdays();
-  buildYearSelect();
-  buildMiniYear();
-  buildYearList();
-  renderMonth(view.year, view.month);
-  refreshMiniYear();
-  highlightYearChip();
+  buildWeekdays(); buildYearSelect(); buildMiniYear(); buildYearList(); renderMonth(view.year, view.month); refreshMiniYear(); highlightYearChip();
 
-  // Accessibility: focus first day on load
-  setTimeout(()=> {
-    const first = daysGrid.querySelector('.day:not(.other)');
-    if (first) first.focus();
-  },300);
+  // close picker on resize/scroll to keep position consistent
+  window.addEventListener('resize', ()=> { closePicker(); });
+  window.addEventListener('scroll', ()=> { closePicker(); }, true);
 
-  // Small helper: update title when month changes externally
-  const obs = new MutationObserver(()=> {
-    // keep monthTitle updated if needed (already updated in renderMonth)
-  });
-  obs.observe(daysGrid, { childList:true, subtree:true });
+  // helpful: when rendering cells, re-apply highlights for any visible dates
+  // (already handled in renderMonth by applying highlights)
 
-  // Ensure selectedDate remains within bounds (if someone selects outside range)
-  // Not required but safe.
+  // expose a simple API in console for debugging:
+  window.__paymentCalendar = {
+    highlights,
+    addHighlight(dateStr, color){ // dateStr 'YYYY-MM-DD'
+      const d = parseYmd(dateStr);
+      highlights[dateStr] = color; saveHighlights(); renderMonth(view.year, view.month);
+    },
+    removeHighlight(dateStr){ delete highlights[dateStr]; saveHighlights(); renderMonth(view.year, view.month); },
+    clearAll(){ highlights = {}; saveHighlights(); renderMonth(view.year, view.month); }
+  };
 
 })();
 </script>
