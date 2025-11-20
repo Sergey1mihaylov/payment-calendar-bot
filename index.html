@@ -1,74 +1,280 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Генератор 0–5</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Генератор 0–100 — iOS style</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      background: #f5f5f7;
+    :root{
+      --bg:#f2f2f5;
+      --glass: rgba(255,255,255,0.7);
+      --accent: #0a84ff; /* iOS blue */
+      --muted: #6b6b73;
+      --shadow: 0 10px 30px rgba(10,10,10,0.12);
     }
 
-    button {
-      padding: 14px 32px;
-      font-size: 22px;
-      border-radius: 16px;
+    /* базовый экран */
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: -apple-system, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(180deg, #eff1f4 0%, var(--bg) 100%);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      color:#111;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .card {
+      width: min(940px, 92vw);
+      max-width: 980px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(250,250,252,0.6));
+      border-radius: 26px;
+      padding: 48px;
+      box-shadow: var(--shadow);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:28px;
+      backdrop-filter: blur(10px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px) saturate(120%);
+    }
+
+    .title {
+      font-size:18px;
+      font-weight:600;
+      letter-spacing: -0.02em;
+      color: #0b1226;
+    }
+
+    /* большая кнопка: в 2 раза больше чем предыдущая (примерно) */
+    .btn {
+      display:inline-grid;
+      place-items:center;
+      padding: 28px 64px; /* увеличено в 2 раза */
+      font-size: 44px;    /* увеличено в 2 раза */
+      font-weight:700;
+      border-radius: 22px;
       border: none;
-      background: #ffffff;
-      color: #000;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-      cursor: pointer;
-      transition: 0.15s ease;
-      backdrop-filter: blur(20px);
+      background: linear-gradient(180deg, #ffffff, #f7f8fb);
+      box-shadow: 0 14px 30px rgba(10,10,10,0.12), inset 0 -1px 0 rgba(0,0,0,0.02);
+      cursor:pointer;
+      transition: transform 200ms cubic-bezier(.2,.9,.2,1), box-shadow 180ms;
+      color: var(--accent);
+      user-select:none;
     }
 
-    button:active {
-      transform: scale(0.95);
+    .btn:active {
+      transform: translateY(2px) scale(0.985);
+    }
+
+    .btn:disabled {
+      opacity:0.6;
+      cursor:default;
+      transform:none;
+    }
+
+    /* цифровой дисплей: цифра в 5 раз больше чем прежняя 72 -> 360 */
+    .display {
+      width:100%;
+      max-width:920px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height: 420px;
     }
 
     #num {
-      margin-top: 40px;
-      font-weight: 600;
-      font-size: 72px;
-      opacity: 0;
-      transform: scale(0.6);
-      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(.25,1.5,.5,1);
+      font-weight:800;
+      font-size: clamp(160px, 30vw, 360px); /* responsive, up to 360px (5x72) */
+      line-height: 0.9;
+      color:#061025;
+      opacity:0;
+      transform: scale(0.4) translateY(12px);
+      will-change: transform, opacity;
+      text-shadow: 0 8px 30px rgba(10,20,40,0.12), 0 1px 0 rgba(255,255,255,0.25) inset;
+      transition: opacity 480ms cubic-bezier(.2,.9,.2,1), transform 680ms cubic-bezier(.2,.9,.2,1);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      background: linear-gradient(180deg, #0b1226, #0b1226); /* solid look */
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: #061025;
     }
 
-    /* класс который активирует анимацию */
+    /* класс включающейся анимации */
     .show {
-      opacity: 1 !important;
-      transform: scale(1) !important;
+      opacity:1;
+      transform: scale(1) translateY(0);
+    }
+
+    /* тонкая подпись */
+    .hint {
+      font-size:14px;
+      color:var(--muted);
+      margin-top: -6px;
+    }
+
+    /* маленькая вспышка при появлении */
+    .burst {
+      position:absolute;
+      width:380px;
+      height:380px;
+      border-radius:50%;
+      pointer-events:none;
+      opacity:0;
+      transform: scale(0.4);
+      transition: opacity 420ms ease, transform 520ms cubic-bezier(.2,.9,.2,1);
+      filter: blur(20px);
+    }
+
+    /* конфетка: легкие полоски в фоне */
+    .stripes {
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      opacity:0.06;
+      background-image:
+        linear-gradient(120deg, rgba(10,20,40,0.02) 10%, transparent 10%),
+        linear-gradient(60deg, rgba(10,20,40,0.02) 10%, transparent 10%);
+      background-size: 40px 40px;
+      border-radius:26px;
+    }
+
+    /* уменьшение движения для пользователей, которые его не хотят */
+    @media (prefers-reduced-motion: reduce) {
+      .btn, #num { transition: none; animation: none; transform: none !important; }
+    }
+
+    /* responsive tweaks for small screens */
+    @media (max-width:480px){
+      .card { padding:28px; border-radius:18px; gap:18px; }
+      .btn { padding:20px 44px; font-size:34px; border-radius:16px; }
+      .display { min-height:280px; }
+      .burst { width:240px; height:240px; }
     }
   </style>
 </head>
 <body>
+  <div class="card" role="application" aria-label="Генератор случайного числа 0–100">
+    <div class="stripes" aria-hidden="true"></div>
 
-  <button onclick="generate()">Сгенерировать</button>
-  <div id="num">0</div>
+    <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+      <div class="title">Генератор 0–100</div>
+      <div class="hint">Нажми кнопку — появится большое число с плавной анимацией</div>
+    </div>
+
+    <button id="btn" class="btn" aria-controls="num" aria-label="Сгенерировать число">Сгенерировать</button>
+
+    <div class="display" aria-hidden="false" style="position:relative;">
+      <!-- вспышка -->
+      <div id="burst" class="burst" aria-hidden="true"></div>
+      <div id="num" role="status" aria-live="polite">—</div>
+    </div>
+  </div>
 
   <script>
-    function generate() {
-      const num = document.getElementById('num');
+    (function(){
+      const btn = document.getElementById('btn');
+      const numEl = document.getElementById('num');
+      const burst = document.getElementById('burst');
 
-      // Убираем текущую анимацию
-      num.classList.remove('show');
+      // утилита для плавного интерполяционного счёта
+      function animateCount(from, to, duration, onTick, onDone){
+        const start = performance.now();
+        const delta = to - from;
+        if (delta === 0) { onTick(to); if (onDone) onDone(); return; }
 
-      const n = Math.floor(Math.random() * 6);
-      num.textContent = n;
+        function step(ts){
+          const t = Math.min(1, (ts - start) / duration);
+          // easeOutCubic
+          const ease = 1 - Math.pow(1 - t, 3);
+          const value = Math.round(from + delta * ease);
+          onTick(value);
+          if (t < 1) requestAnimationFrame(step);
+          else if (onDone) onDone();
+        }
+        requestAnimationFrame(step);
+      }
 
-      // Запускаем анимацию чуть позже, чтобы браузер увидел разницу
-      setTimeout(() => {
-        num.classList.add('show');
-      }, 20);
-    }
+      // плавная вспышка
+      function playBurst(color = 'rgba(10,132,255,0.15)') {
+        burst.style.background = `radial-gradient(circle at 50% 40%, ${color}, rgba(255,255,255,0))`;
+        burst.style.opacity = '0.9';
+        burst.style.transform = 'scale(1)';
+        // quick reset
+        setTimeout(()=> {
+          burst.style.transition = 'opacity 520ms ease, transform 520ms cubic-bezier(.2,.9,.2,1)';
+          burst.style.opacity = '0';
+          burst.style.transform = 'scale(1.6)';
+        }, 60);
+        // cleanup after animation
+        setTimeout(()=> {
+          burst.style.transition = '';
+          burst.style.transform = 'scale(0.4)';
+          burst.style.opacity = '0';
+        }, 700);
+      }
+
+      // безопасная генерация рандома целого 0..100
+      function randInt0to100(){
+        // crypto-safe if available
+        if (window.crypto && crypto.getRandomValues) {
+          const buf = new Uint32Array(1);
+          crypto.getRandomValues(buf);
+          return buf[0] % 101;
+        }
+        return Math.floor(Math.random() * 101);
+      }
+
+      // основная логика
+      btn.addEventListener('click', () => {
+        btn.disabled = true;
+        // генерируем число
+        const n = randInt0to100();
+
+        // play burst
+        playBurst();
+
+        // убрать класс show, чтобы можно было переанимировать
+        numEl.classList.remove('show');
+
+        // маленькая задержка, чтобы браузер применил стиль
+        requestAnimationFrame(()=> {
+          // сбрасываем содержимое на 0 для видимого счёта
+          numEl.textContent = '0';
+          // запускаем сам счёт
+          animateCount(0, n, 900, (value) => {
+            numEl.textContent = value;
+          }, ()=> {
+            // когда досчитали — включаем большую появляющуюся анимацию (появление + "пружина")
+            numEl.classList.add('show');
+            // небольшая "пружина" — дополнительный scale на короткое время
+            numEl.animate([
+              { transform: 'scale(1.08) translateY(-6px)' },
+              { transform: 'scale(0.98) translateY(2px)' },
+              { transform: 'scale(1) translateY(0)' }
+            ], {
+              duration: 520,
+              easing: 'cubic-bezier(.2,.9,.2,1)'
+            });
+            btn.disabled = false;
+          });
+        });
+      });
+
+      // начальное состояние: показываем 0 аккуратно
+      window.addEventListener('load', () => {
+        numEl.textContent = '—';
+        // маленький начальный поп-ин
+        setTimeout(()=> {
+          numEl.style.opacity = '0.08';
+          numEl.style.transform = 'scale(0.6) translateY(8px)';
+        }, 80);
+      });
+    })();
   </script>
-
 </body>
 </html>
