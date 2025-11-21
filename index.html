@@ -1,921 +1,700 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Календарь платежей — iOS style (финал)</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>iOS style Календарь платежей</title>
 <style>
-  /* Системные шрифты */
-  body, button, input, select { font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-  :root{
-    --radius:16px;
-    --primary:#0a84ff;
-    --shadow: 0 12px 30px rgba(0,0,0,0.45);
-    --glass: rgba(255,255,255,0.04);
-  }
-  /* Тёмная фон — глубокие абстрактные "обои" */
-  html,body {
-    height:100%;margin:0;background:
-    radial-gradient(1200px 600px at 10% 10%, rgba(44,20,80,0.55), transparent 10%),
-    radial-gradient(1000px 500px at 90% 90%, rgba(6,50,62,0.5), transparent 12%),
-    linear-gradient(180deg, #03040a 0%, #071125 40%, #08121a 100%);
-    color:#e6eef8;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  *{box-sizing:border-box;}
+  body {
+    margin:0; min-height:100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    background: linear-gradient(180deg, #03040a 0%, #071125 40%, #08121a 100%);
+    color: #e6eef8;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    display: flex;
+    justify-content: center;
+    padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
   }
   #app {
-    max-width:520px;
-    margin:0 auto;
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
-    gap:10px;
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
   header {
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    padding:14px 8px 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 8px 0 2px;
   }
-  header h1 {
-    margin:0;
-    font-size:1.15rem;
-    font-weight:800;
-    letter-spacing:0.01em;
-    color:#f5f8ff;
+  #monthLabel {
+    font-weight: 900;
+    font-size: 1.3rem;
+    letter-spacing: 0.05em;
   }
-  .nav-left,.nav-right {
-    position:absolute;
-    top:50%;
-    transform:translateY(-50%);
-    background:transparent;
-    border:0;
-    padding:8px;
-    border-radius:10px;
-    color:var(--primary);
-    cursor:pointer;
-    font-size:1.6rem;
+  button.nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #0a84ff;
+    font-size: 2.2rem;
+    font-weight: 700;
+    cursor: pointer;
     user-select:none;
+    width: 40px;
+    height: 40px;
   }
-  .nav-left { left:8px; }
-  .nav-right { right:8px; }
-
-  /* Controls */
-  .controls {
-    display:flex;
-    gap:8px;
-    justify-content:center;
-    padding:0 12px 6px;
+  button#prev {
+    left: 0;
   }
-  .btn {
-    background:var(--primary);
-    color:#fff;
-    border:0;
-    padding:10px 12px;
-    border-radius:12px;
-    font-weight:700;
-    cursor:pointer;
-    box-shadow:var(--shadow);
-    transition:transform 200ms;
-    display:inline-flex;
-    gap:8px;
-    align-items:center;
+  button#next {
+    right: 0;
   }
-  .btn:active { transform:translateY(1px) }
-  .ghost {
-    background:transparent;
-    color:#dfe9ff;
-    border:1px solid rgba(255,255,255,0.04);
-    padding:8px 10px;
-    border-radius:10px;
+  button.nav:active {
+    transform: translateY(-50%) scale(0.9);
   }
-  .small {
-    padding:8px 10px;
-    border-radius:10px;
-    font-weight:700;
-  }
-
-  /* Weekdays */
   .weekdays {
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    gap:6px;
-    padding:0 6px;
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    gap: 8px;
+    color: #a8b8d6;
+    font-weight: 700;
+    user-select:none;
   }
   .weekday {
-    font-weight:800;
-    font-size:0.82rem;
-    text-align:center;
-    padding:6px 4px;
-    color:rgba(200,220,255,0.9);
-    opacity:0.95;
-    user-select:none;
+    text-align: center;
+    font-size: 0.88rem;
   }
-
-  /* Calendar grid */
-  .calendar {
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    gap:8px;
-    padding:6px;
+  #calendar {
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    gap: 8px;
   }
   .day {
     aspect-ratio: 1 / 1;
-    border-radius: var(--radius);
+    border-radius: 14px;
     display: flex;
-    align-items: flex-start;
     justify-content: flex-start;
-    padding: 8px;
+    align-items: flex-start;
+    padding: 10px;
+    font-weight: 700;
+    font-size: 1rem;
     cursor: pointer;
-    transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+    user-select:none;
     position: relative;
-    user-select: none;
-    background: transparent;
-    color: inherit;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
   }
   .day.empty {
-    opacity:0.18;
+    opacity: 0.12;
     cursor: default;
-    background: transparent;
   }
-  .day:hover:not(.empty):not(.selected) {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-1px);
+  .day:hover:not(.empty) {
+    background-color: rgba(10, 132, 255, 0.15);
   }
   .day.selected {
-    background: linear-gradient(135deg, #0a84ff 0%, #5ac8fa 100%);
-    box-shadow:
-      0 0 0 3px rgba(10, 132, 255, 0.8),
-      0 8px 16px rgba(10, 132, 255, 0.4);
+    background: linear-gradient(135deg, #0a84ff, #5ac8fa);
     color: white;
-    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 3px rgba(10,132,255,0.8),
+      0 8px 15px rgba(10,132,255,0.4);
   }
-  .num {
-    font-weight: 900;
-    z-index: 2;
+  .day.today {
+    border: 2px solid #0a84ff;
+  }
+  .day .date-num {
     width: 36px;
     height: 36px;
-    line-height: 36px;
     border-radius: 50%;
+    line-height: 36px;
     text-align: center;
-    background: transparent;
-    color: inherit;
-    user-select:none;
+    pointer-events:none;
   }
-  .day.today .num {
-    box-shadow: 0 10px 30px rgba(10,132,255,0.12);
-    outline: 2px solid rgba(255,255,255,0.03);
+  .day.has-payments {
+    background-color: rgba(10, 132, 255, 0.12);
   }
-  .badge {
-    position: absolute;
-    right: 8px;
-    top: 8px;
-    background: rgba(0,0,0,0.12);
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 0.8rem;
-    user-select:none;
-  }
-  .list {
-    margin-top: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    z-index: 2;
-  }
-  .chip {
-    display: flex;
-    align-items: center;
-    padding: 6px 8px;
-    border-radius: 10px;
-    font-weight: 800;
-    color: white;
-    font-size: 0.9rem;
-    box-shadow: 0 6px 14px rgba(0,0,0,0.18);
-    user-select:none;
-  }
-
-  /* Controls: export/import area (footer) */
-  .footer-controls {
-    display:flex;
-    gap:8px;
-    justify-content:center;
-    padding:8px;
-  }
-
   #fab {
     position: fixed;
-    right: 18px;
-    bottom: 18px;
-    width: 58px;
-    height: 58px;
+    right: 20px;
+    bottom: 20px;
+    background: #0a84ff;
+    border: none;
+    color: white;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
-    background: var(--primary);
-    color: #fff;
     font-size: 34px;
-    border: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow);
-    z-index: 2000;
+    font-weight: 700;
     cursor: pointer;
+    box-shadow:
+      0 10px 30px rgba(10,132,255,0.6);
     user-select:none;
+    transition: transform 0.2s ease;
+    z-index: 1000;
   }
-
-  /* Overlay + modal */
+  #fab:active {
+    transform: scale(0.92);
+  }
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.45);
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
     display: flex;
-    align-items: center;
     justify-content: center;
-    z-index: 2000;
-    padding: 20px;
+    align-items: center;
+    z-index: 1500;
     opacity: 0;
-    transition: opacity 0.25s ease;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
   }
-  .overlay[hidden] {
-    display: none !important;
-    opacity: 0 !important;
+  .overlay.show {
+    opacity: 1;
+    pointer-events: auto;
   }
   .modal {
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    backdrop-filter: blur(8px);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border-radius: 18px;
+    padding: 20px;
     width: 100%;
-    max-width: 520px;
-    max-height: 92vh;
-    overflow: auto;
-    padding: 16px;
+    max-width: 420px;
+    color: #e6eef8;
+    box-shadow: 0 12px 36px rgba(10,132,255,0.3);
     position: relative;
-    border: 1px solid rgba(255,255,255,0.03);
-    color: #eef6ff;
   }
   .modal h2 {
-    margin: 0 0 12px;
-    font-size: 1.1rem;
+    margin-top: 0;
     font-weight: 800;
+    font-size: 1.2rem;
     text-align: center;
-    color: #eef6ff;
   }
-  .close {
+  .modal button.close {
     position: absolute;
-    right: 12px;
-    top: 12px;
-    border: 0;
-    background: transparent;
-    font-size: 22px;
-    color: var(--primary);
+    right: 16px;
+    top: 16px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #0a84ff;
     cursor: pointer;
     user-select:none;
   }
-
   form {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 14px;
+    margin-top: 12px;
   }
   label {
-    font-weight: 800;
+    font-weight: 700;
     font-size: 0.9rem;
-    color: #eaf4ff;
   }
-  input[type=text], input[type=number], input[type=date], select {
-    padding: 10px;
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  select {
     border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.04);
-    background: transparent;
-    color: #eaf4ff;
-    outline: none;
+    border: none;
+    padding: 10px 14px;
     font-size: 1rem;
+    background: rgba(255,255,255,0.07);
+    color: #e6eef8;
+    outline-offset: 2px;
+    outline-color: #0a84ff;
+    outline-style: solid;
+    outline-width: 0;
+    transition: outline-width 0.2s ease;
+  }
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  input[type="date"]:focus,
+  select:focus {
+    outline-width: 2px;
   }
   .row {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
+  }
+  .radio-group label {
+    cursor: pointer;
+    user-select:none;
+    font-weight: 600;
+  }
+  input[type="radio"] {
+    margin-right: 6px;
+  }
+  input[type="checkbox"] {
+    margin-right: 8px;
+  }
+  button.btn {
+    background: #0a84ff;
+    border: none;
+    padding: 12px 16px;
+    font-weight: 700;
+    color: white;
+    font-size: 1rem;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow:
+      0 6px 18px rgba(10,132,255,0.6);
+    user-select:none;
+    transition: background-color 0.3s ease;
+  }
+  button.btn:hover {
+    background-color: #147aff;
+  }
+  button.btn:active {
+    background-color: #0a64d8;
+  }
+  button.btn.secondary {
+    background: transparent;
+    border: 1.5px solid #0a84ff;
+    color: #0a84ff;
+    box-shadow: none;
+  }
+  button.btn.secondary:hover {
+    background: rgba(10,132,255,0.15);
   }
   .color-picker {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
   }
   .color-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
     border: 2px solid transparent;
     cursor: pointer;
+    transition: border-color 0.2s ease;
   }
   .color-btn.selected {
-    outline: 3px solid rgba(255,255,255,0.04);
+    border-color: white;
     transform: translateY(-2px);
   }
-
-  .payment-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  #dayPaymentsList {
+    max-height: 280px;
+    overflow-y: auto;
+    margin-top: 8px;
   }
   .payment-item {
+    background: rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    font-weight: 700;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px;
-    border-radius: 10px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    user-select:none;
   }
-  .actions {
-    display: flex;
-    gap: 6px;
+  .payment-item .category-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    user-select:none;
   }
-
+  #dayTotal {
+    margin-top: 12px;
+    font-weight: 900;
+    font-size: 1.1rem;
+    text-align: right;
+    color: #0a84ff;
+    user-select:none;
+  }
   footer {
-    padding: 10px 6px 40px;
-    text-align: center;
     font-size: 0.85rem;
-    color: #cfe6ff;
-    opacity: 0.9;
+    color: #8a9bb8;
+    text-align: center;
+    margin-top: 12px;
+    user-select:none;
   }
-
-  @media (min-width:420px) {
-    .day {
-      min-height: 88px;
+  @media (max-width: 360px) {
+    #app {
+      max-width: 100%;
+    }
+    button.nav {
+      font-size: 1.8rem;
+      width: 34px;
+      height: 34px;
+    }
+    #fab {
+      width: 48px;
+      height: 48px;
+      font-size: 28px;
     }
   }
 </style>
 </head>
 <body>
-<div id="app" role="application" aria-label="Календарь платежей">
-  <header>
-    <button class="nav-left" id="prev" aria-label="Предыдущий месяц">&lsaquo;</button>
-    <h1 id="monthLabel" aria-live="polite">Календарь</h1>
-    <button class="nav-right" id="next" aria-label="Следующий месяц">&rsaquo;</button>
-  </header>
+  <div id="app" role="application" aria-label="Календарь платежей">
+    <header>
+      <button class="nav" id="prev" aria-label="Предыдущий месяц">&lsaquo;</button>
+      <h1 id="monthLabel" aria-live="polite">Январь 2024</h1>
+      <button class="nav" id="next" aria-label="Следующий месяц">&rsaquo;</button>
+    </header>
 
-  <!-- Weekdays -->
-  <div class="weekdays" aria-hidden="false">
-    <div class="weekday">Пн</div>
-    <div class="weekday">Вт</div>
-    <div class="weekday">Ср</div>
-    <div class="weekday">Чт</div>
-    <div class="weekday">Пт</div>
-    <div class="weekday">Сб</div>
-    <div class="weekday">Вс</div>
+    <div class="weekdays" aria-hidden="true">
+      <div class="weekday">Пн</div>
+      <div class="weekday">Вт</div>
+      <div class="weekday">Ср</div>
+      <div class="weekday">Чт</div>
+      <div class="weekday">Пт</div>
+      <div class="weekday">Сб</div>
+      <div class="weekday">Вс</div>
+    </div>
+
+    <div id="calendar" role="grid" aria-label="Календарь"></div>
+
+    <button id="fab" aria-label="Добавить платеж">+</button>
+
+    <footer>Данные хранятся локально (localStorage). Экспорт и импорт доступны.</footer>
   </div>
 
-  <!-- Calendar grid -->
-  <div id="calendar" class="calendar" role="grid" aria-label="Календарь"></div>
+  <!-- Add/Edit modal -->
+  <div class="overlay" id="modalAdd" role="dialog" aria-modal="true" aria-labelledby="modalAddTitle" tabindex="-1" hidden>
+    <div class="modal">
+      <button class="close" aria-label="Закрыть">&times;</button>
+      <h2 id="modalAddTitle">Добавить платеж</h2>
+      <form id="formAdd">
+        <input type="hidden" id="paymentId" />
+        <label for="paymentName">Название</label>
+        <input id="paymentName" type="text" maxlength="40" required placeholder="Ипотека, подписка..." autocomplete="off" />
 
-  <!-- Floating add -->
-  <button id="fab" title="Добавить платеж">+</button>
+        <label for="paymentSum">Сумма (₽)</label>
+        <input id="paymentSum" type="number" min="0" step="0.01" required placeholder="10000" autocomplete="off" />
 
-  <!-- Footer controls: export/import -->
-  <div class="footer-controls">
-    <button id="exportBtn" class="ghost">Экспорт</button>
-    <label class="ghost" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
-      Импорт
-      <input id="importFile" type="file" accept=".json" style="display:none" />
-    </label>
+        <label for="paymentDate">Дата</label>
+        <input id="paymentDate" type="date" required />
+
+        <label for="paymentCategory">Категория</label>
+        <select id="paymentCategory" required>
+          <option value="ипотека">Ипотека</option>
+          <option value="подписки">Подписки</option>
+          <option value="кредит">Кредит</option>
+          <option value="связь">Связь</option>
+          <option value="коммуналка">Коммуналка</option>
+          <option value="другое">Другое</option>
+        </select>
+
+        <label>
+          <input type="checkbox" id="paymentAutoSeries" />
+          Автосерия (каждый месяц)
+        </label>
+
+        <div style="display:flex; gap:10px; margin-top: 10px; flex-wrap: wrap;">
+          <button type="submit" class="btn" style="flex-grow:1;">Сохранить</button>
+          <button type="button" class="btn secondary" id="btnDelete" style="flex-grow:1; color:#ff7a7a; border-color:#ff7a7a; display:none;">Удалить</button>
+        </div>
+      </form>
+    </div>
   </div>
 
-  <footer>Данные хранятся локально (localStorage). Напоминания — через бот/сервер.</footer>
-</div>
-
-<!-- Modal: Add/Edit -->
-<div id="modalAdd" class="overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
-    <button class="close" data-close>&times;</button>
-    <h2 id="addTitle">Добавить / Редактировать платеж</h2>
-    <form id="form">
-      <input type="hidden" id="pid" />
-      <label for="pname">Название</label>
-      <input id="pname" type="text" required placeholder="Например, Ипотека" />
-
-      <label for="psum">Сумма (₽)</label>
-      <input id="psum" type="number" required min="0" step="0.01" placeholder="10000" />
-
-      <label for="pdate">Дата</label>
-      <input id="pdate" type="date" required />
-
-      <label for="pcat">Категория</label>
-      <select id="pcat" required>
-        <option value="ипотека">Ипотека</option>
-        <option value="подписки">Подписки</option>
-        <option value="кредит">Кредит</option>
-        <option value="связь">Связь</option>
-        <option value="коммуналка">Коммуналка</option>
-        <option value="другое">Другое</option>
-      </select>
-
-      <label>Периодичность</label>
-      <div class="row" id="periodRow">
-        <label style="display:flex;align-items:center;gap:8px"><input type="radio" name="period" value="разово" checked /> Разово</label>
-        <label style="display:flex;align-items:center;gap:8px"><input type="radio" name="period" value="start_month" /> 1-е</label>
-        <label style="display:flex;align-items:center;gap:8px"><input type="radio" name="period" value="end_month" /> посл. день</label>
-      </div>
-
-      <label><input type="checkbox" id="autoSeries" /> Создать автосерию (24 повтора вперед)</label>
-
-      <label>Цвет метки (по умолчанию — цвет категории)</label>
-      <div class="color-picker" id="colorPicker"></div>
-
-      <div class="row" style="margin-top:10px">
-        <button class="btn" id="saveBtn" type="submit">Сохранить</button>
-        <button class="ghost" id="btnAdd30" type="button">+30 дней</button>
-        <button class="ghost" id="btnAdd30Auto" type="button">+30 (серия 24)</button>
-        <button class="ghost" id="btnDelete" type="button" style="margin-left:auto;color:#ff7a7a">Удалить</button>
-      </div>
-
-      <div style="margin-top:8px;font-size:0.9rem;color:#cbdff6">Примечание: суммы видны только в детальном просмотре. Удаление одного платежа серии удаляет последующие записи серии, предыдущие остаются.</div>
-    </form>
+  <!-- Day payments modal -->
+  <div class="overlay" id="modalDay" role="dialog" aria-modal="true" aria-labelledby="modalDayTitle" tabindex="-1" hidden>
+    <div class="modal">
+      <button class="close" aria-label="Закрыть">&times;</button>
+      <h2 id="modalDayTitle">Платежи</h2>
+      <div id="dayPaymentsList"></div>
+      <div id="dayTotal"></div>
+    </div>
   </div>
-</div>
-
-<!-- Modal: Day view (no auto-open) -->
-<div id="modalDay" class="overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dayTitle">
-    <button class="close" data-close>&times;</button>
-    <h2 id="dayTitle">Платежи</h2>
-    <div id="dayList" class="payment-list" style="margin-top:8px"></div>
-    <div style="margin-top:12px;text-align:right;font-weight:800;color:#f1f9ff" id="dayTotal"></div>
-  </div>
-</div>
 
 <script>
 (() => {
-  'use strict';
+  "use strict";
 
-  /* ---------- Constants / Colors ---------- */
   const CAT_COLORS = {
-    'ипотека': '#ff4d4f',
-    'подписки': '#ff8c3b',
-    'кредит': '#2f80ed',
-    'связь': '#4cc9f0',
-    'коммуналка': '#ffd60a',
-    'другое': '#ff66b2'
+    "ипотека": "#ff4d4f",
+    "подписки": "#ff8c3b",
+    "кредит": "#2f80ed",
+    "связь": "#4cc9f0",
+    "коммуналка": "#ffd60a",
+    "другое": "#9e9e9e"
   };
-  const SERIES_LENGTH = 24; // 24 months / 24 occurrences
 
-  /* ---------- DOM ---------- */
-  const calendarEl = document.getElementById('calendar');
   const monthLabel = document.getElementById('monthLabel');
   const prevBtn = document.getElementById('prev');
   const nextBtn = document.getElementById('next');
+  const calendarEl = document.getElementById('calendar');
   const fab = document.getElementById('fab');
 
   const modalAdd = document.getElementById('modalAdd');
-  const form = document.getElementById('form');
-  const pid = document.getElementById('pid');
-  const pname = document.getElementById('pname');
-  const psum = document.getElementById('psum');
-  const pdate = document.getElementById('pdate');
-  const pcat = document.getElementById('pcat');
-  const colorPicker = document.getElementById('colorPicker');
-  const autoSeriesCheckbox = document.getElementById('autoSeries');
-  const btnAdd30 = document.getElementById('btnAdd30');
-  const btnAdd30Auto = document.getElementById('btnAdd30Auto');
-  const btnDelete = document.getElementById('btnDelete');
-
-  const exportBtn = document.getElementById('exportBtn');
-  const importFile = document.getElementById('importFile');
-
   const modalDay = document.getElementById('modalDay');
-  const dayList = document.getElementById('dayList');
-  const dayTitle = document.getElementById('dayTitle');
+  const dayPaymentsList = document.getElementById('dayPaymentsList');
   const dayTotal = document.getElementById('dayTotal');
 
-  /* ---------- State ---------- */
-  let currentYear, currentMonth; // month 0-11
-  let payments = [];
-  let selectedDay = null;
+  const formAdd = document.getElementById('formAdd');
+  const paymentId = document.getElementById('paymentId');
+  const paymentName = document.getElementById('paymentName');
+  const paymentSum = document.getElementById('paymentSum');
+  const paymentDate = document.getElementById('paymentDate');
+  const paymentCategory = document.getElementById('paymentCategory');
+  const paymentAutoSeries = document.getElementById('paymentAutoSeries');
+  const btnDelete = document.getElementById('btnDelete');
 
-  /* ---------- Utils ---------- */
-  function savePayments() {
-    localStorage.setItem('payments', JSON.stringify(payments));
+  let currentYear, currentMonth;
+  let payments = [];
+  let selectedDateStr = null;
+
+  const generateId = () => 'p' + Math.random().toString(36).slice(2, 10);
+
+  function formatDate(date) {
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2,'0');
+    const d = date.getDate().toString().padStart(2,'0');
+    return `${y}-${m}-${d}`;
   }
-  function loadPayments() {
-    let raw = localStorage.getItem('payments');
-    payments = raw ? JSON.parse(raw) : [];
-  }
-  function formatDate(d) {
-    return d.toISOString().slice(0,10);
-  }
+
   function parseDate(str) {
     return new Date(str + 'T00:00:00');
   }
-  function startOfMonth(year, month) {
-    return new Date(year, month, 1);
-  }
-  function endOfMonth(year, month) {
-    return new Date(year, month + 1, 0);
-  }
+
   function daysInMonth(year, month) {
-    return endOfMonth(year, month).getDate();
+    return new Date(year, month + 1, 0).getDate();
   }
+
   function weekdayISO(date) {
-    // Пн=1, Вс=7
-    let w = date.getDay();
-    return w === 0 ? 7 : w;
-  }
-  function nextMonth(y,m) {
-    if (m === 11) return [y+1,0];
-    return [y,m+1];
-  }
-  function prevMonth(y,m) {
-    if (m === 0) return [y-1,11];
-    return [y,m-1];
-  }
-  function generateId() {
-    return 'p'+Math.random().toString(36).slice(2,10);
-  }
-  function isSameDay(d1, d2) {
-    return d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
+    let wd = date.getDay();
+    return wd === 0 ? 7 : wd;
   }
 
-  /* ---------- Color picker ---------- */
-  function createColorButtons(selectedColor) {
-    colorPicker.innerHTML = '';
-    let usedColors = new Set(Object.values(CAT_COLORS));
-    // Все цвета из категорий + пользовательские:
-    let customColors = payments.map(p => p.color).filter(c => c && !usedColors.has(c));
-    customColors.forEach(c => usedColors.add(c));
-    const allColors = [...usedColors];
+  const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
-    allColors.forEach(color => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'color-btn';
-      btn.style.backgroundColor = color;
-      if (color === selectedColor) btn.classList.add('selected');
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.color-btn.selected').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-      });
-      colorPicker.appendChild(btn);
+  function savePayments() {
+    localStorage.setItem('payments', JSON.stringify(payments));
+  }
+
+  function loadPayments() {
+    const data = localStorage.getItem('payments');
+    payments = data ? JSON.parse(data) : [];
+  }
+
+  function getPaymentsForDate(dateStr) {
+    return payments.filter(p => p.date === dateStr);
+  }
+
+  function getPaymentsForMonth(year, month) {
+    return payments.filter(p => {
+      const d = parseDate(p.date);
+      return d.getFullYear() === year && d.getMonth() === month;
     });
   }
-  createColorButtons(null);
 
-  function getSelectedColor() {
-    const sel = document.querySelector('.color-btn.selected');
-    return sel ? sel.style.backgroundColor : null;
+  function updateMonthLabel() {
+    monthLabel.textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
   }
 
-  /* ---------- Render calendar ---------- */
+  function clearSelected() {
+    if (!selectedDateStr) return;
+    const prev = calendarEl.querySelector(`.day[data-date="${selectedDateStr}"]`);
+    if (prev) prev.classList.remove('selected');
+    selectedDateStr = null;
+  }
+
   function renderCalendar() {
     calendarEl.innerHTML = '';
-    let firstDay = startOfMonth(currentYear, currentMonth);
-    let totalDays = daysInMonth(currentYear, currentMonth);
+    updateMonthLabel();
 
-    // Пн = 1, Вс = 7
-    let startWeekday = weekdayISO(firstDay); // 1..7
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const firstWeekday = weekdayISO(firstDay); // 1(Пн) - 7(Вс)
+    const totalDays = daysInMonth(currentYear, currentMonth);
 
-    // Заполняем пустыми с начала недели
-    let totalCells = Math.ceil((startWeekday - 1 + totalDays) / 7) * 7;
-    let dayNumber = 1;
-
-    // Сгруппируем платежи по дате для подсчёта суммы
-    let paymentsByDate = {};
-    payments.forEach(p => {
-      let dt = p.date;
-      if (!paymentsByDate[dt]) paymentsByDate[dt] = [];
-      paymentsByDate[dt].push(p);
-    });
-
-    // Найдем максимальную сумму дня (для закрашивания)
-    let maxSum = 0;
-    Object.entries(paymentsByDate).forEach(([date, ps]) => {
-      let s = ps.reduce((acc,v) => acc + Number(v.sum), 0);
-      if (s > maxSum) maxSum = s;
-    });
-
-    for (let i=0; i<totalCells; i++) {
-      let dayEl = document.createElement('div');
-      dayEl.className = 'day';
-      dayEl.setAttribute('role', 'gridcell');
-
-      if (i < startWeekday - 1 || dayNumber > totalDays) {
-        dayEl.classList.add('empty');
-        dayEl.setAttribute('aria-disabled', 'true');
-        calendarEl.appendChild(dayEl);
-        continue;
-      }
-
-      // Дата
-      let thisDate = new Date(currentYear, currentMonth, dayNumber);
-      let thisDateStr = formatDate(thisDate);
-
-      dayEl.dataset.date = thisDateStr;
-      dayEl.tabIndex = 0;
-
-      // Число
-      let numEl = document.createElement('div');
-      numEl.className = 'num';
-      numEl.textContent = dayNumber;
-      dayEl.appendChild(numEl);
-
-      // Сегодня
-      let now = new Date();
-      if (isSameDay(thisDate, now)) dayEl.classList.add('today');
-
-      // Выделение выбранного
-      if (selectedDay && selectedDay === thisDateStr) dayEl.classList.add('selected');
-
-      // Подсветка по сумме
-      let dayPayments = paymentsByDate[thisDateStr] || [];
-      if (dayPayments.length) {
-        // Максимальная сумма
-        let daySum = dayPayments.reduce((acc,v) => acc + Number(v.sum), 0);
-        let intensity = daySum / maxSum; // 0..1
-        intensity = Math.min(1, Math.max(0.15, intensity));
-        // По цветам возьмём максимальный цвет платежа
-        let maxPayment = dayPayments.reduce((maxP,curP) => (curP.sum > (maxP?.sum || 0)) ? curP : maxP, null);
-        let baseColor = maxPayment?.color || CAT_COLORS[maxPayment?.category] || 'rgba(10,132,255,0.3)';
-        // Превратим baseColor в rgba + умножим alpha на intensity
-        let c = baseColor.startsWith('#') ? hexToRgb(baseColor) : parseRgb(baseColor);
-        let bg = `rgba(${c.r},${c.g},${c.b},${0.12 + 0.28 * intensity})`;
-        dayEl.style.background = bg;
-        dayEl.style.color = intensity > 0.5 ? '#fff' : '#a0b9ff';
-      } else {
-        dayEl.style.background = 'transparent';
-        dayEl.style.color = '#dfe9ff';
-      }
-
-      calendarEl.appendChild(dayEl);
-      dayNumber++;
+    // Пустые клетки перед первым числом (если первый
+      // Пустые клетки перед первым числом (если первый день не понедельник)
+    for(let i=1; i < firstWeekday; i++){
+      const emptyCell = document.createElement('div');
+      emptyCell.classList.add('day','empty');
+      calendarEl.appendChild(emptyCell);
     }
-    monthLabel.textContent = currentYear + ' / ' + (currentMonth+1);
-  }
 
-  /* ---------- Parse color string rgb or hex ---------- */
-  function hexToRgb(hex) {
-    hex = hex.replace('#','');
-    if (hex.length === 3) {
-      return {
-        r: parseInt(hex[0]+hex[0],16),
-        g: parseInt(hex[1]+hex[1],16),
-        b: parseInt(hex[2]+hex[2],16)
-      };
-    } else if (hex.length === 6) {
-      return {
-        r: parseInt(hex.substring(0,2),16),
-        g: parseInt(hex.substring(2,4),16),
-        b: parseInt(hex.substring(4,6),16)
-      };
+    // Дни месяца
+    const todayStr = formatDate(new Date());
+    for(let day=1; day <= totalDays; day++){
+      const dateStr = `${currentYear}-${(currentMonth+1).toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}`;
+      const dayCell = document.createElement('div');
+      dayCell.classList.add('day');
+      dayCell.setAttribute('data-date', dateStr);
+      dayCell.setAttribute('role', 'gridcell');
+      dayCell.setAttribute('tabindex', '0');
+      dayCell.innerHTML = `<div class="date-num">${day}</div>`;
+
+      // Подсветка сегодня
+      if(dateStr === todayStr) dayCell.classList.add('today');
+
+      // Есть ли платежи на этот день
+      const pays = getPaymentsForDate(dateStr);
+      if(pays.length) dayCell.classList.add('has-payments');
+
+      // Выделение выбранного дня
+      if(dateStr === selectedDateStr) dayCell.classList.add('selected');
+
+      dayCell.addEventListener('click', () => openDayModal(dateStr));
+      dayCell.addEventListener('keydown', e => {
+        if(e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openDayModal(dateStr);
+        }
+      });
+
+      calendarEl.appendChild(dayCell);
     }
-    return {r:10,g:132,b:255};
-  }
-  function parseRgb(rgb) {
-    let m = rgb.match(/rgba?\((\d+),(\d+),(\d+)/);
-    if (!m) return {r:10,g:132,b:255};
-    return {r:+m[1],g:+m[2],b:+m[3]};
   }
 
-  /* ---------- Show modal Add / Edit ---------- */
-  function openAddModal(date, payment=null) {
-    modalAdd.hidden = false;
-    modalAdd.focus();
-    if (payment) {
-      pid.value = payment.id;
-      pname.value = payment.name;
-      psum.value = payment.sum;
-      pdate.value = payment.date;
-      pcat.value = payment.category;
-      autoSeriesCheckbox.checked = !!payment.series;
-      // Цвет метки
-      createColorButtons(payment.color);
-      setTimeout(() => {
-        let colorBtns = document.querySelectorAll('.color-btn');
-        colorBtns.forEach(b => {
-          if (b.style.backgroundColor === payment.color) b.classList.add('selected');
-        });
-      },10);
+  function openAddModal(dateStr = null, payment = null) {
+    if(payment){
+      paymentId.value = payment.id;
+      paymentName.value = payment.name;
+      paymentSum.value = payment.sum;
+      paymentDate.value = payment.date;
+      paymentCategory.value = payment.category;
+      paymentAutoSeries.checked = payment.autoSeries || false;
       btnDelete.style.display = 'inline-block';
     } else {
-      pid.value = '';
-      pname.value = '';
-      psum.value = '';
-      pdate.value = date || formatDate(new Date());
-      pcat.value = 'другое';
-      autoSeriesCheckbox.checked = false;
-      createColorButtons(CAT_COLORS['другое']);
+      paymentId.value = '';
+      paymentName.value = '';
+      paymentSum.value = '';
+      paymentDate.value = dateStr || formatDate(new Date());
+      paymentCategory.value = 'ипотека';
+      paymentAutoSeries.checked = false;
       btnDelete.style.display = 'none';
     }
-  }
-  function closeModals() {
-    modalAdd.hidden = true;
-    modalDay.hidden = true;
+    modalAdd.classList.add('show');
+    modalAdd.removeAttribute('hidden');
+    paymentName.focus();
   }
 
-  /* ---------- Render day modal ---------- */
-  function openDayModal(date) {
-    modalDay.hidden = false;
-    dayList.innerHTML = '';
-    dayTitle.textContent = 'Платежи за ' + date;
-    let dayPayments = payments.filter(p => p.date === date);
-    let total = 0;
-    if (!dayPayments.length) {
-      dayList.textContent = 'Платежи отсутствуют';
-      dayTotal.textContent = '';
+  function closeAddModal() {
+    modalAdd.classList.remove('show');
+    modalAdd.setAttribute('hidden', '');
+  }
+
+  function openDayModal(dateStr) {
+    selectedDateStr = dateStr;
+    renderCalendar();
+
+    const pays = getPaymentsForDate(dateStr);
+    dayPaymentsList.innerHTML = '';
+
+    if(pays.length === 0){
+      dayPaymentsList.innerHTML = `<p style="text-align:center; font-weight:600; opacity:0.5;">Нет платежей</p>`;
     } else {
-      dayPayments.forEach(p => {
-        total += Number(p.sum);
-        let item = document.createElement('div');
-        item.className = 'payment-item';
-        let left = document.createElement('div');
-        left.textContent = p.name || 'Без названия';
-        left.style.color = p.color || CAT_COLORS[p.category] || '#dfe9ff';
-
-        let right = document.createElement('div');
-        right.textContent = p.sum + ' ₽';
-        right.style.fontWeight = '700';
-
-        item.appendChild(left);
-        item.appendChild(right);
-        dayList.appendChild(item);
+      pays.forEach(p => {
+        const el = document.createElement('div');
+        el.className = 'payment-item';
+        el.innerHTML = `
+          <span>${p.name}</span>
+          <span style="font-weight: 900;">${Number(p.sum).toLocaleString('ru-RU', {minimumFractionDigits:2})} ₽</span>
+        `;
+        dayPaymentsList.appendChild(el);
       });
-      dayTotal.textContent = 'Итого: ' + total.toFixed(2) + ' ₽';
     }
+    const total = pays.reduce((acc, p) => acc + Number(p.sum), 0);
+    dayTotal.textContent = `Итого: ${total.toLocaleString('ru-RU', {minimumFractionDigits:2})} ₽`;
+
+    modalDay.classList.add('show');
+    modalDay.removeAttribute('hidden');
   }
 
-  /* ---------- Handlers ---------- */
-  prevBtn.onclick = () => {
-    [currentYear, currentMonth] = prevMonth(currentYear, currentMonth);
-    selectedDay = null;
-    renderCalendar();
-  };
-  nextBtn.onclick = () => {
-    [currentYear, currentMonth] = nextMonth(currentYear, currentMonth);
-    selectedDay = null;
-    renderCalendar();
-  };
-  fab.onclick = () => {
-    openAddModal(null, null);
-  };
-  calendarEl.onclick = e => {
-    let dayEl = e.target.closest('.day');
-    if (!dayEl || dayEl.classList.contains('empty')) return;
-    let date = dayEl.dataset.date;
-    selectedDay = date;
-    renderCalendar();
-    openDayModal(date);
-  };
-  calendarEl.onkeydown = e => {
-    if(e.key === 'Enter' || e.key === ' ') {
-      let dayEl = e.target.closest('.day');
-      if (!dayEl || dayEl.classList.contains('empty')) return;
-      let date = dayEl.dataset.date;
-      selectedDay = date;
-      renderCalendar();
-      openDayModal(date);
-    }
-  };
+  function closeDayModal() {
+    modalDay.classList.remove('show');
+    modalDay.setAttribute('hidden', '');
+    clearSelected();
+  }
 
-  // Modal close buttons
-  document.querySelectorAll('[data-close]').forEach(btn => {
-    btn.onclick = () => {
-      closeModals();
-    };
-  });
-
-  // Save payment
-  form.onsubmit = e => {
+  function addOrUpdatePayment(e) {
     e.preventDefault();
-    let idVal = pid.value.trim();
-    let payment = {
-      id: idVal || generateId(),
-      name: pname.value.trim() || 'Без названия',
-      sum: Number(psum.value),
-      date: pdate.value,
-      category: pcat.value,
-      series: autoSeriesCheckbox.checked,
-      color: getSelectedColor() || CAT_COLORS[pcat.value] || '#0a84ff'
-    };
+    const id = paymentId.value;
+    const name = paymentName.value.trim();
+    const sum = parseFloat(paymentSum.value);
+    const date = paymentDate.value;
+    const category = paymentCategory.value;
+    const autoSeries = paymentAutoSeries.checked;
 
-    if (idVal) {
+    if(!name || isNaN(sum) || sum < 0 || !date) return;
+
+    if(id){
       // Update existing
-      let idx = payments.findIndex(p => p.id === idVal);
-      if (idx !== -1) {
-        payments[idx] = payment;
-      } else {
-        payments.push(payment);
+      const idx = payments.findIndex(p => p.id === id);
+      if(idx !== -1){
+        payments[idx] = {id, name, sum, date, category, autoSeries};
       }
     } else {
-      payments.push(payment);
-    }
-
-    // Если автосерия — создаём вперед копии через 30 дней
-    if (payment.series) {
-      let baseDate = parseDate(payment.date);
-      for (let i = 1; i < SERIES_LENGTH; i++) {
-        let nextDate = new Date(baseDate.getTime());
-        nextDate.setDate(nextDate.getDate() + 30 * i);
-        payments.push({
-          id: generateId(),
-          name: payment.name,
-          sum: payment.sum,
-          date: formatDate(nextDate),
-          category: payment.category,
-          series: true,
-          color: payment.color
-        });
-      }
+      // Add new
+      payments.push({id: generateId(), name, sum, date, category, autoSeries});
     }
     savePayments();
-    closeModals();
+    closeAddModal();
     renderCalendar();
-  };
+  }
 
-  // Delete payment
-  btnDelete.onclick = () => {
-    let idVal = pid.value.trim();
-    if (!idVal) return;
-    // Удаляем все платежи с таким id и с серией (удаляем последующие из серии)
-    let toDelete = payments.find(p => p.id === idVal);
-    if (!toDelete) return;
-    // Если серия - удаляем все платежи серии с таким же именем и датой >= этой
-    if (toDelete.series) {
-      payments = payments.filter(p => !(p.name === toDelete.name && p.series && p.date >= toDelete.date));
+  function deletePayment() {
+    const id = paymentId.value;
+    if(!id) return;
+    payments = payments.filter(p => p.id !== id);
+    savePayments();
+    closeAddModal();
+    renderCalendar();
+  }
+
+  function prevMonth() {
+    if(currentMonth === 0){
+      currentMonth = 11;
+      currentYear--;
     } else {
-      payments = payments.filter(p => p.id !== idVal);
+      currentMonth--;
     }
-    savePayments();
-    closeModals();
+    clearSelected();
     renderCalendar();
-  };
+  }
 
-  // +30 дней (создаёт один платеж через 30 дней)
-  btnAdd30.onclick = () => {
-    let dateVal = pdate.value;
-    if (!dateVal) return;
-    let baseDate = parseDate(dateVal);
-    baseDate.setDate(baseDate.getDate() + 30);
-    pdate.value = formatDate(baseDate);
-  };
-  // +30 дней (создаёт автосерию 24 платежа через 30 дней)
-  btnAdd30Auto.onclick = () => {
-    autoSeriesCheckbox.checked = true;
-    btnAdd30.onclick();
-  };
+  function nextMonth() {
+    if(currentMonth === 11){
+      currentMonth = 0;
+      currentYear++;
+    } else {
+      currentMonth++;
+    }
+    clearSelected();
+    renderCalendar();
+  }
 
-  // Экспорт в JSON
-  exportBtn.onclick = () => {
-    const dataStr = JSON.stringify(payments, null, 2);
-    const blob = new Blob([dataStr], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'payments-export.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Импорт из JSON
-  importFile.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = evt => {
-      try {
-        const imported = JSON.parse(evt.target.result);
-        if (!Array.isArray(imported)) throw new Error('Неверный формат файла');
-        payments = imported;
-        savePayments();
-        renderCalendar();
-        alert('Импорт успешен');
-      } catch (err) {
-        alert('Ошибка импорта: ' + err.message);
-      }
-    };
-    reader.readAsText(file);
-    importFile.value = '';
-  };
-
-  /* ---------- Init ---------- */
   function init() {
-    let now = new Date();
+    loadPayments();
+    const now = new Date();
     currentYear = now.getFullYear();
     currentMonth = now.getMonth();
-    loadPayments();
     renderCalendar();
   }
 
-  init();
+  // Слушатели
+  prevBtn.addEventListener('click', prevMonth);
+  nextBtn.addEventListener('click', nextMonth);
+  fab.addEventListener('click', () => openAddModal());
 
-  // Закрывать модалки по ESC
-  window.addEventListener('keydown', e => {
-    if(e.key === 'Escape') {
-      closeModals();
+  // Закрытие модалок
+  modalAdd.querySelector('.close').addEventListener('click', closeAddModal);
+  modalDay.querySelector('.close').addEventListener('click', closeDayModal);
+
+  formAdd.addEventListener('submit', addOrUpdatePayment);
+  btnDelete.addEventListener('click', deletePayment);
+
+  // Клавиши Esc закрывают модалки
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){
+      if(modalAdd.classList.contains('show')) closeAddModal();
+      else if(modalDay.classList.contains('show')) closeDayModal();
     }
   });
+
+  init();
 
 })();
 </script>
