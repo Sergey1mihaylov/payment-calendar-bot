@@ -20,10 +20,10 @@
     --safe-bottom: env(safe-area-inset-bottom);
 
     /* sizing */
-    --cell-size: 30px;      /* base day diameter (reduced, compact) */
-    --cell-gap: 6px;        /* gap between cells (reduced) */
-    --today-mult: 1.5;      /* today circle multiplier (1.5x) */
-    --weekdays-scale: 1.05; /* weekdays area increased by 5% */
+    --cell-size: 35px;      /* base day diameter (reduced, compact) */
+    --cell-gap: 8px;        /* gap between cells (reduced) */
+    --today-mult: 1.4;      /* today circle multiplier (1.5x) */
+    --weekdays-scale: 1.1; /* weekdays area increased by 5% */
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Helvetica Neue", Arial;
   }
 
@@ -323,8 +323,8 @@
   .day-pay{padding:8px;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:8px;display:flex;justify-content:space-between;gap:12px;align-items:center}
   .del-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:6px 8px;border-radius:8px;cursor:pointer;font-weight:700}
 
-  @media (max-width:420px){
-    :root{ --cell-size: 28px; }
+  @media (max-width:5200px){
+    :root{ --cell-size: 33px; }
     .weekdays-wrap{ width: calc(var(--cell-size) * 7 + var(--cell-gap) * 6); }
     .top-header{height:62px}
     .bottom-box{height:92px}
