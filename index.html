@@ -1,1 +1,777 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Платежный календарь — mini app</title>
+<style>
+  :root{
+    --bg1:#000004;
+    --bg2:#041022;
+    --accent-blue:#0A84FF;
+    --accent-red:#FF3B30;
+    --accent-income:#EDEFF6;
+    --accent-mix:#FF9AB3;
+    --card-bg: rgba(255,255,255,0.03);
+    --glass: rgba(255,255,255,0.04);
+    --text:#E6E6E6;
+    --muted:#B7B7BF;
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
 
+    /* sizing */
+    --cell-size: 30px;      /* base day diameter (reduced, compact) */
+    --cell-gap: 6px;        /* gap between cells (reduced) */
+    --today-mult: 1.5;      /* today circle multiplier (1.5x) */
+    --weekdays-scale: 1.05; /* weekdays area increased by 5% */
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Helvetica Neue", Arial;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    -webkit-font-smoothing:antialiased;
+    -webkit-text-size-adjust:100%;
+    box-sizing:border-box;
+    background: var(--bg1);
+    color:var(--text);
+  }
+  *{box-sizing:inherit}
+
+  /* Decorative blurred paint drops behind everything */
+  body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(400px 220px at 15% 20%, rgba(10,120,255,0.45), transparent 20%),
+      radial-gradient(260px 160px at 70% 70%, rgba(255,120,30,0.30), transparent 18%),
+      radial-gradient(180px 120px at 45% 50%, rgba(0,80,200,0.18), transparent 18%),
+      radial-gradient(120px 90px at 80% 25%, rgba(255,160,40,0.12), transparent 20%),
+      linear-gradient(180deg, var(--bg2) 0%, #000000 100%);
+    filter: blur(36px) saturate(120%);
+    opacity:0.95;
+  }
+
+  .app{
+    position:relative;
+    z-index:1; /* above decorative background */
+    height: calc(100vh - var(--safe-top) - var(--safe-bottom));
+    padding-top: calc(var(--safe-top) + 10px);
+    padding-bottom: calc(var(--safe-bottom) + 12px);
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:stretch;
+  }
+
+  /* Top header (static) */
+  .top-header{
+    height:64px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    user-select:none;
+    flex-shrink:0;
+  }
+  .month-nav{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    font-size:18px;
+    font-weight:600;
+    padding:0 12px;
+  }
+  .nav-btn{
+    width:44px;
+    height:44px;
+    border-radius:22px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.03);
+  }
+  .nav-btn svg{width:18px;height:18px;fill:var(--text)}
+
+  .content{
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    padding:0 12px;
+    overflow:hidden;
+  }
+
+  /* Weekdays block: fixed width aligned with calendar, 5% taller */
+  .weekdays-wrap{
+    width: calc(var(--cell-size) * 7 + var(--cell-gap) * 6);
+    margin: 0 auto;
+    display:block;
+    transform: scaleY(var(--weekdays-scale));
+    transform-origin: center top;
+  }
+  .weekdays{
+    display:grid;
+    grid-template-columns: repeat(7, var(--cell-size));
+    column-gap: var(--cell-gap);
+    width:100%;
+    text-align:center;
+    font-size:13px;
+    color:var(--muted);
+    user-select:none;
+    padding:6px 2px;
+  }
+
+  /* Calendar wrapper: center and limit width */
+  .calendar-wrap{
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    width:100%;
+  }
+  .calendar{
+    display:grid;
+    grid-template-columns: repeat(7, var(--cell-size));
+    column-gap: var(--cell-gap);
+    row-gap: var(--cell-gap);
+    width: calc(var(--cell-size) * 7 + var(--cell-gap) * 6);
+    margin: 0 auto;
+    /* fixed row height so highlighting does not push rows:
+       use enough height to contain enlarged today (today-mult) */
+    grid-auto-rows: calc(var(--cell-size) * var(--today-mult));
+    justify-content:center;
+    align-items:center;
+  }
+
+  .cell{
+    width:var(--cell-size);
+    height:var(--cell-size);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+    color:var(--text);
+    border-radius:50%;
+    user-select:none;
+    cursor:pointer;
+    position:relative;
+    transition: transform .12s ease, box-shadow .12s ease;
+    justify-self:center;
+    align-self:center;
+  }
+  .cell.empty{visibility:hidden; pointer-events:none;}
+
+  .cell:hover{ transform: translateY(-4px); }
+
+  .cell.today{
+    background:var(--accent-blue);
+    width: calc(var(--cell-size) * var(--today-mult));
+    height: calc(var(--cell-size) * var(--today-mult));
+    font-size:16px;
+    box-shadow: 0 8px 26px rgba(10,132,255,0.22);
+    justify-self:center;
+    align-self:center;
+  }
+
+  .cell.payment{
+    background:var(--accent-red);
+    box-shadow: 0 4px 12px rgba(255,59,48,0.18);
+  }
+
+  .cell.income{
+    background:linear-gradient(180deg, var(--accent-income), #F6F7FB);
+    color:#101018;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+  }
+
+  .cell.mix{
+    background:var(--accent-mix);
+    box-shadow: 0 4px 10px rgba(255,154,179,0.12);
+  }
+
+  .add-wrapper{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    margin-top:6px;
+    margin-bottom:6px;
+  }
+  .btn-add{
+    width:70%;
+    max-width:420px;
+    border-radius:14px;
+    background:linear-gradient(180deg,var(--accent-blue), #0066d6);
+    color:white;
+    font-weight:700;
+    padding:10px 14px;
+    text-align:center;
+    font-size:16px;
+    cursor:pointer;
+    box-shadow: 0 8px 30px rgba(10,132,255,0.18);
+  }
+
+  .bottom-box{
+    height:86px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    background:transparent;
+    flex-shrink:0;
+    position:relative;
+  }
+  .bottom-inner{
+    width:100%;
+    max-width:900px;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    padding:0 12px;
+  }
+  .bottom-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .tab-buttons{
+    display:flex;
+    gap:8px;
+    background:var(--card-bg);
+    padding:6px;
+    border-radius:12px;
+    width:100%;
+    justify-content:center;
+  }
+  .tab-button{
+    flex:1;
+    padding:10px 6px;
+    border-radius:10px;
+    text-align:center;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--muted);
+  }
+  .tab-button.active{
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    color:var(--text);
+    box-shadow: inset 0 -1px rgba(255,255,255,0.02);
+  }
+
+  .list{
+    overflow:auto;
+    padding-right:6px;
+  }
+  .pay-block{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:12px;
+    padding:10px;
+    margin:8px 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
+
+  /* Modal (opaque deep navy-black) */
+  .overlay{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8));
+    z-index:60;
+    padding:20px;
+  }
+  .overlay.show{display:flex}
+  .modal{
+    width:100%;
+    max-width:560px;
+    background: linear-gradient(180deg,#04102a 0%, #000004 100%); /* opaque */
+    border-radius:16px;
+    padding:16px;
+    color:var(--text);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    overflow:hidden;
+  }
+  .modal h3{margin:6px 0 12px 0;font-size:18px}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+  .field{flex:1;display:flex;flex-direction:column;gap:6px;min-width:120px}
+  .field.small{max-width:150px;flex:0 1 150px}
+  input[type="text"], input[type="number"], input[type="date"], select, textarea{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.06);
+    padding:10px;
+    border-radius:10px;
+    color:var(--text);
+    outline:none;
+    font-size:15px;
+    width:100%;
+    box-sizing:border-box;
+  }
+  textarea{min-height:70px;resize:vertical}
+  .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+  .btn{padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted)}
+  .btn.primary{background:var(--accent-blue);color:white}
+
+  .day-pay{padding:8px;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:8px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+  .del-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:6px 8px;border-radius:8px;cursor:pointer;font-weight:700}
+
+  @media (max-width:420px){
+    :root{ --cell-size: 28px; }
+    .weekdays-wrap{ width: calc(var(--cell-size) * 7 + var(--cell-gap) * 6); }
+    .top-header{height:62px}
+    .bottom-box{height:92px}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="top-header">
+    <div class="month-nav">
+      <div class="nav-btn" id="prevMonth" title="Предыдущий месяц">
+        <svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+      </div>
+      <div id="currentMonthLabel" aria-live="polite">Декабрь 2025</div>
+      <div class="nav-btn" id="nextMonth" title="Следующий месяц">
+        <svg viewBox="0 0 24 24"><path d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="content" id="contentArea">
+    <!-- Weekdays: separate div, same total width as calendar, scaled +5% in height -->
+    <div class="weekdays-wrap" aria-hidden="true">
+      <div class="weekdays">
+        <div>ПН</div><div>ВТ</div><div>СР</div><div>ЧТ</div><div>ПТ</div><div>СБ</div><div>ВС</div>
+      </div>
+    </div>
+
+    <div id="tabCalendar" style="display:block; flex:1 1 auto;">
+      <div style="display:flex;flex-direction:column;align-items:stretch;gap:8px;height:100%;">
+        <div class="calendar-wrap" style="flex:1 1 auto;">
+          <div id="calendarGrid" class="calendar" aria-label="Календарь"></div>
+        </div>
+
+        <div class="add-wrapper">
+          <div class="btn-add" id="btnAdd">Добавить платёж</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabList" style="display:none; flex:1 1 auto; overflow:hidden;">
+      <div style="flex:1 1 auto; display:flex; flex-direction:column; gap:8px; height:100%;">
+        <div class="list" id="listContainer" tabindex="0" style="overflow:auto; padding-right:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-box">
+    <div class="bottom-inner">
+      <div class="bottom-row" style="justify-content:center;">
+        <div style="font-weight:700; text-align:center;"> <span id="bottomMonthLabel"></span> </div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="tab-buttons" role="tablist">
+          <div class="tab-button active" id="tabBtnCalendar">Календарь</div>
+          <div class="tab-button" id="tabBtnList">Список</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalContent" role="dialog" aria-modal="true"></div>
+</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+
+  const currentMonthLabel = $('#currentMonthLabel');
+  const bottomMonthLabel = $('#bottomMonthLabel');
+  const prevBtn = $('#prevMonth');
+  const nextBtn = $('#nextMonth');
+  const calendarGrid = $('#calendarGrid');
+  const btnAdd = $('#btnAdd');
+  const overlay = $('#overlay');
+  const modalContent = $('#modalContent');
+  const tabBtnCalendar = $('#tabBtnCalendar');
+  const tabBtnList = $('#tabBtnList');
+  const tabCalendar = $('#tabCalendar');
+  const tabList = $('#tabList');
+  const listContainer = $('#listContainer');
+
+  let viewDate = new Date();
+  viewDate.setDate(1);
+
+  const STORAGE_KEY = 'mini_payments_v1';
+  let payments = loadPayments();
+
+  function loadPayments(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch(e){ console.error(e); return []; }
+  }
+  function savePayments(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(payments)); }
+
+  function formatMonthYear(d){
+    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    return months[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function isoFromDateObj(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+  function parseISO(iso){ return new Date(iso + 'T00:00:00'); }
+  function fmtShortISO(iso){ const d = parseISO(iso); return pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + String(d.getFullYear()).slice(-2); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m])); }
+
+  function init(){
+    renderHeader();
+    computeAndRenderCalendar();
+    renderList();
+    attachEvents();
+    bottomMonthLabel.textContent = formatMonthYear(viewDate);
+  }
+
+  function renderHeader(){
+    currentMonthLabel.textContent = formatMonthYear(viewDate);
+    bottomMonthLabel.textContent = formatMonthYear(viewDate);
+  }
+
+  function computeAndRenderCalendar(){
+    calendarGrid.innerHTML = '';
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    let startWeekday = firstOfMonth.getDay(); // 0 Sun .. 6 Sat
+    startWeekday = startWeekday === 0 ? 7 : startWeekday; // Sunday -> 7
+    const offset = startWeekday - 1; // empty cells before 1st (Monday-first)
+
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const totalCells = 42; // 6 weeks x 7 days
+
+    const today = new Date();
+    const todayISO = isoFromDateObj(today);
+
+    for(let i=0;i<totalCells;i++){
+      const div = document.createElement('div');
+      div.className = 'cell';
+      const dayNumber = i - offset + 1;
+      if(dayNumber < 1 || dayNumber > daysInMonth){
+        div.classList.add('empty');
+        calendarGrid.appendChild(div);
+        continue;
+      }
+      div.textContent = String(dayNumber);
+      const thisDate = new Date(year, month, dayNumber);
+      const thisISO = isoFromDateObj(thisDate);
+      div.dataset.iso = thisISO;
+
+      const pays = payments.filter(p => p.dateISO === thisISO);
+      if(pays.length>0){
+        const hasPayment = pays.some(p => p.type === 'payment');
+        const hasIncome = pays.some(p => p.type === 'income');
+        if(hasPayment && hasIncome) div.classList.add('mix');
+        else if(hasIncome) div.classList.add('income');
+        else div.classList.add('payment');
+      }
+
+      if(thisISO === todayISO){
+        div.classList.remove('payment','income','mix');
+        div.classList.add('today');
+      }
+
+      div.addEventListener('click', onDateClick);
+      calendarGrid.appendChild(div);
+    }
+  }
+
+  function onDateClick(e){
+    openDayModal(e.currentTarget.dataset.iso);
+  }
+
+  function openDayModal(iso){
+    const pays = payments.filter(p => p.dateISO === iso).sort((a,b)=> (a.type===b.type? a.id - b.id : a.type.localeCompare(b.type)));
+    let html = `<h3>День — ${fmtShortISO(iso)}</h3>`;
+
+    if(pays.length>0){
+      html += `<div style="max-height:48vh; overflow:auto; padding-right:6px;">`;
+      pays.forEach(p=>{
+        html += `<div class="day-pay" data-id="${p.id}">
+          <div class="left" style="min-width:0">
+            <div style="font-weight:800">${escapeHtml(p.title)} ${p.type==='income' ? '（Заработок）' : ''}</div>
+            <div style="color:var(--muted);font-size:13px;margin-top:6px">${escapeHtml(p.category || '')}${p.bank ? ' · ' + escapeHtml(p.bank) : ''}</div>
+            <div style="color:var(--muted);font-size:13px;margin-top:6px">${escapeHtml(p.comment || '')}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+            <div style="font-weight:900">${p.amount} ₽</div>
+            <div style="display:flex;gap:8px;">
+              <button class="del-btn" data-id="${p.id}" title="Удалить платёж">Удалить</button>
+            </div>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    } else {
+      if(payments.length === 0){
+        html += `<div style="color:var(--muted)">Платежей в приложении нет.</div>`;
+      } else {
+        const d0 = parseISO(iso);
+        const future = payments.map(p=>({...p,dateObj:parseISO(p.dateISO)})).filter(p=>p.dateObj.getTime() > d0.getTime()).sort((a,b)=>a.dateObj - b.dateObj);
+        if(future.length>0){
+          const next = future[0];
+          const diffDays = Math.ceil((next.dateObj - d0)/(1000*60*60*24));
+          html += `<div style="color:var(--muted)">До ближайшего платежа: <strong>${diffDays} ${declOfNum(diffDays,['день','дня','дней'])}</strong> (${fmtShortISO(next.dateISO)} — ${escapeHtml(next.title)} ${next.amount} ₽).</div>`;
+        } else {
+          const past = payments.map(p=>({...p,dateObj:parseISO(p.dateISO)})).filter(p=>p.dateObj.getTime() < d0.getTime()).sort((a,b)=>b.dateObj - a.dateObj);
+          if(past.length>0){
+            const last = past[0];
+            const diffDays = Math.ceil((d0 - last.dateObj)/(1000*60*60*24));
+            html += `<div style="color:var(--muted)">Ближайший платёж был <strong>${diffDays} ${declOfNum(diffDays,['день','дня','дней'])}</strong> назад (${fmtShortISO(last.dateISO)} — ${escapeHtml(last.title)} ${last.amount} ₽).</div>`;
+          } else {
+            html += `<div style="color:var(--muted)">Нет информации о ближайших платежах.</div>`;
+          }
+        }
+      }
+    }
+
+    html += `<div class="modal actions" style="margin-top:12px; padding:0;">
+      <button class="btn secondary" id="closeDay">Закрыть</button>
+      <button class="btn primary" id="addFromDay">Добавить платёж на эту дату</button>
+    </div>`;
+
+    modalContent.innerHTML = html;
+    overlay.classList.add('show');
+
+    $('#closeDay').addEventListener('click', ()=> overlay.classList.remove('show'));
+    $('#addFromDay').addEventListener('click', ()=>{ overlay.classList.remove('show'); openAddModal(iso); });
+
+    $$('.del-btn').forEach(b => {
+      b.addEventListener('click', (ev)=>{
+        const id = ev.currentTarget.dataset.id;
+        ev.stopPropagation();
+        if(confirm('Удалить платёж? Это нельзя будет отменить.')) {
+          payments = payments.filter(p=>p.id !== id);
+          savePayments();
+          overlay.classList.remove('show');
+          computeAndRenderCalendar();
+          renderList();
+        }
+      });
+    });
+  }
+
+  function openAddModal(prefillIso){
+    const isoPref = prefillIso || isoFromDateObj(new Date());
+    const html = `<h3>Добавить платёж / доход</h3>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px;">
+          <label style="font-size:13px;color:var(--muted);margin-bottom:6px;display:block">Тип</label>
+          <div style="display:flex;gap:8px;">
+            <button id="typePayment" class="btn secondary" style="flex:1;border-radius:10px;">Ежемесячный платеж</button>
+            <button id="typeIncome" class="btn secondary" style="flex:1;border-radius:10px;">Заработок</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>Название</label><input type="text" id="fldTitle" placeholder="Например: Теле2"></div>
+        <div class="field small"><label>Сумма, ₽</label><input type="number" id="fldAmount" placeholder="750" min="0" max="999999" inputmode="numeric"></div>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>Категория</label>
+          <select id="fldCategory">
+            <option value="Мобильная связь">Мобильная связь</option>
+            <option value="Ипотека">Ипотека</option>
+            <option value="Подписки">Подписки</option>
+            <option value="Платёж по кредиту">Платёж по кредиту</option>
+            <option value="Коммуналка">Коммуналка</option>
+            <option value="Другое">Другое</option>
+          </select>
+        </div>
+        <div class="field small"><label>Дата</label><input type="date" id="fldDate" value="${isoPref}"></div>
+      </div>
+
+      <div id="incomeExtra" style="display:none; margin-bottom:8px;">
+        <div class="row">
+          <div class="field"><label>Комментарий (обязательно)</label><textarea id="fldComment" placeholder="Комментарий..."></textarea></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Банк (вручную)</label><input type="text" id="fldBank" placeholder="Название банка"></div>
+        </div>
+      </div>
+
+      <div class="modal actions">
+        <button class="btn secondary" id="cancelAdd">Отменить</button>
+        <button class="btn primary" id="saveAdd">Сохранить</button>
+      </div>`;
+
+    modalContent.innerHTML = html;
+    overlay.classList.add('show');
+
+    let type = 'payment';
+    const typePaymentBtn = $('#typePayment');
+    const typeIncomeBtn = $('#typeIncome');
+    const incomeExtra = $('#incomeExtra');
+    setActiveType();
+
+    typePaymentBtn.addEventListener('click', ()=>{ type='payment'; setActiveType(); });
+    typeIncomeBtn.addEventListener('click', ()=>{ type='income'; setActiveType(); });
+
+    function setActiveType(){
+      if(type==='payment'){
+        typePaymentBtn.classList.add('primary'); typePaymentBtn.classList.remove('secondary');
+        typeIncomeBtn.classList.add('secondary'); typeIncomeBtn.classList.remove('primary');
+        incomeExtra.style.display='none';
+      } else {
+        typePaymentBtn.classList.remove('secondary'); typePaymentBtn.classList.remove('primary');
+        typeIncomeBtn.classList.add('primary'); typeIncomeBtn.classList.remove('secondary');
+        incomeExtra.style.display='block';
+      }
+    }
+
+    const fldAmount = $('#fldAmount');
+    // clamp amount live and prevent entering > 999999
+    fldAmount.addEventListener('input', (e)=>{
+      let v = e.target.value.replace(/\D/g,'');
+      if(v === ''){ e.target.value = ''; return; }
+      if(v.length > 6) v = v.slice(0,6);
+      let num = Number(v);
+      if(num > 999999) num = 999999;
+      e.target.value = String(num);
+    });
+
+    $('#cancelAdd').addEventListener('click', ()=> overlay.classList.remove('show'));
+    $('#saveAdd').addEventListener('click', ()=>{
+      const title = ($('#fldTitle').value || '').trim();
+      const amountRaw = ($('#fldAmount').value || '0').replace(/\s+/g,'');
+      const amount = Math.min(999999, Number(amountRaw || 0));
+      const dateISO = $('#fldDate').value;
+      const category = $('#fldCategory').value;
+      const comment = ($('#fldComment') ? $('#fldComment').value.trim() : '') || '';
+      const bank = ($('#fldBank') ? $('#fldBank').value.trim() : '') || '';
+
+      if(!title){ alert('Введите название платежа.'); return; }
+      if(!dateISO){ alert('Выберите дату.'); return; }
+      if(type==='income' && !comment){ alert('Комментарий обязателен для типа "Заработок".'); return; }
+
+      const newPay = {
+        id: 'p' + Date.now(),
+        title, category, amount: amount || 0, dateISO, type, bank, comment
+      };
+      payments.push(newPay);
+      savePayments();
+      overlay.classList.remove('show');
+      computeAndRenderCalendar();
+      renderList();
+    });
+  }
+
+  function renderList(){
+    listContainer.innerHTML = '';
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const monthISO = `${year}-${pad(month+1)}`;
+
+    const pays = payments.filter(p => p.dateISO.startsWith(monthISO)).sort((a,b)=> parseISO(a.dateISO) - parseISO(b.dateISO));
+
+    if(pays.length===0){
+      listContainer.innerHTML = `<div style="color:var(--muted); padding:8px;">Платежи за ${formatMonthYear(viewDate)} отсутствуют.</div>`;
+      return;
+    }
+
+    pays.forEach(p=>{
+      const el = document.createElement('div');
+      el.className = 'pay-block';
+      el.innerHTML = `<div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:56px;height:56px;border-radius:10px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-weight:800;">${pad(new Date(p.dateISO).getDate())}</div>
+          <div style="min-width:0">
+            <div class="pay-title">${escapeHtml(p.title)}</div>
+            <div class="pay-meta">${escapeHtml(p.category || '')} · ${fmtShortISO(p.dateISO)}</div>
+          </div>
+        </div>
+        <div style="text-align:right; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+          <div class="pay-amount">${p.amount} ₽</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div style="color:var(--muted);font-size:13px">${p.type === 'income' ? 'Заработок' : 'Платеж'}</div>
+            <button class="del-btn" data-id="${p.id}" title="Удалить платёж">Удалить</button>
+          </div>
+        </div>`;
+
+      el.addEventListener('click', (ev)=> {
+        if(ev.target && ev.target.classList.contains('del-btn')) return;
+        openDayModal(p.dateISO);
+      });
+
+      // delete button handler
+      setTimeout(()=>{ 
+        const db = el.querySelector('.del-btn');
+        if(db){
+          db.addEventListener('click', (ev)=>{
+            ev.stopPropagation();
+            if(confirm('Удалить платёж? Это нельзя будет отменить.')){
+              const id = ev.currentTarget.dataset.id;
+              payments = payments.filter(x=>x.id !== id);
+              savePayments();
+              computeAndRenderCalendar();
+              renderList();
+            }
+          });
+        }
+      },0);
+
+      listContainer.appendChild(el);
+    });
+  }
+
+  prevBtn.addEventListener('click', ()=>{
+    viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth()-1, 1);
+    renderHeader(); computeAndRenderCalendar(); renderList();
+  });
+  nextBtn.addEventListener('click', ()=>{
+    viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth()+1, 1);
+    renderHeader(); computeAndRenderCalendar(); renderList();
+  });
+
+  btnAdd.addEventListener('click', ()=> openAddModal());
+
+  tabBtnCalendar.addEventListener('click', ()=>{
+    tabBtnCalendar.classList.add('active');
+    tabBtnList.classList.remove('active');
+    tabCalendar.style.display = 'block';
+    tabList.style.display = 'none';
+  });
+  tabBtnList.addEventListener('click', ()=>{
+    tabBtnList.classList.add('active');
+    tabBtnCalendar.classList.remove('active');
+    tabList.style.display = 'block';
+    tabCalendar.style.display = 'none';
+  });
+
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) overlay.classList.remove('show'); });
+
+  function declOfNum(n, titles) {
+    n = Math.abs(n) % 100;
+    const n1 = n % 10;
+    if (n > 10 && n < 20) return titles[2];
+    if (n1 > 1 && n1 < 5) return titles[1];
+    if (n1 == 1) return titles[0];
+    return titles[2];
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
