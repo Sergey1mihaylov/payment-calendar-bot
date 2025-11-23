@@ -1,1 +1,872 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Платежный календарь — mini app</title>
+<style>
+  :root{
+    --bg1:#050506;
+    --bg2:#07112a; /* deep blue */
+    --accent-blue:#0A84FF; /* today / primary */
+    --accent-red:#FF3B30; /* payment */
+    --accent-income:#EDEFF6; /* moon-white */
+    --accent-mix:#FF9AB3; /* pink for mixed */
+    --card-bg: rgba(255,255,255,0.03);
+    --glass: rgba(255,255,255,0.04);
+    --text:#E6E6E6;
+    --muted:#B7B7BF;
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Helvetica Neue", Arial;
+  }
 
+  html,body{
+    height:100%;
+    margin:0;
+    color:var(--text);
+    background: radial-gradient(1200px 600px at 10% 10%, rgba(10,100,255,0.06), transparent 10%),
+                radial-gradient(900px 500px at 90% 90%, rgba(120,0,255,0.03), transparent 10%),
+                linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 100%);
+    -webkit-font-smoothing:antialiased;
+    -webkit-text-size-adjust:100%;
+    box-sizing:border-box;
+  }
+  *{box-sizing:inherit}
+
+  /* App shell fits viewport (for iPhone 16e full screen) */
+  .app{
+    height: calc(100vh - var(--safe-top) - var(--safe-bottom));
+    padding-top: calc(var(--safe-top) + 12px);
+    padding-bottom: calc(var(--safe-bottom) + 12px);
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px;
+  }
+
+  /* Static top header (шапка календаря) */
+  .top-header{
+    height:64px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    background:transparent;
+    user-select:none;
+    flex-shrink:0;
+  }
+  .month-nav{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    font-size:18px;
+    font-weight:600;
+    letter-spacing:0.2px;
+    padding:0 60px;
+  }
+  .nav-btn{
+    width:44px;
+    height:44px;
+    border-radius:22px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--glass);
+    border:1px solid rgba(255,255,255,0.03);
+    backdrop-filter: blur(6px);
+  }
+  .nav-btn svg{width:18px;height:18px;fill:var(--text)}
+
+  /* Middle content area: tabs content should not move header or bottom */
+  .content{
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    padding:0 12px;
+    overflow:hidden; /* no scrolling of whole app */
+  }
+
+  /* Weekday row */
+  .weekdays{
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:0;
+    text-align:center;
+    font-size:12px;
+    color:var(--muted);
+    padding:4px 6px;
+    user-select:none;
+  }
+
+  /* Calendar grid */
+  .calendar{
+    display:grid;
+    gap:8px;
+    grid-template-columns:repeat(7, 1fr);
+    justify-items:center;
+    align-items:start;
+    /* calendar height will be computed in JS to fit available space perfectly */
+  }
+
+  .cell{
+    width:44px;
+    height:44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px; /* число высотой 20px - как в ТЗ */
+    color:var(--text);
+    border-radius:50%;
+    user-select:none;
+    cursor:pointer;
+    position:relative;
+  }
+
+  /* Empty cells invisible but keep size */
+  .cell.empty{opacity:0; pointer-events:none;}
+
+  /* Markers */
+  .cell.today{
+    background:var(--accent-blue);
+    width:60px; /* 1.5x of 40? We set text 20px and circle 30px required -> approximate visually */
+    height:60px;
+    font-size:20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 0 6px 20px rgba(10,132,255,0.18);
+  }
+
+  .cell.payment{
+    background:var(--accent-red);
+    box-shadow: 0 4px 14px rgba(255,59,48,0.18);
+  }
+
+  .cell.income{
+    background:linear-gradient(180deg, var(--accent-income), #F6F7FB);
+    color:#101018;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+  }
+
+  .cell.mix{
+    background:var(--accent-mix);
+    box-shadow: 0 4px 12px rgba(255,154,179,0.15);
+  }
+
+  /* Add Payment button: occupies 70% width, centered, height 1.5x text */
+  .add-wrapper{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    margin-top:6px;
+    margin-bottom:6px;
+  }
+  .btn-add{
+    width:70%;
+    max-width:420px;
+    border-radius:14px;
+    background:linear-gradient(180deg,var(--accent-blue), #0066d6);
+    color:white;
+    font-weight:700;
+    padding:12px 18px;
+    text-align:center;
+    font-size:16px;
+    cursor:pointer;
+    box-shadow: 0 8px 30px rgba(10,132,255,0.18);
+  }
+
+  /* Bottom static box with two buttons */
+  .bottom-box{
+    height:86px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    background:transparent;
+    flex-shrink:0;
+    position:relative;
+  }
+  .bottom-inner{
+    width:100%;
+    max-width:900px;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    padding:0 12px;
+  }
+  .bottom-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .tab-buttons{
+    display:flex;
+    gap:8px;
+    background:var(--card-bg);
+    padding:6px;
+    border-radius:12px;
+    width:100%;
+    justify-content:center;
+  }
+  .tab-button{
+    flex:1;
+    padding:10px 6px;
+    border-radius:10px;
+    text-align:center;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--muted);
+  }
+  .tab-button.active{
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    color:var(--text);
+    box-shadow: inset 0 -1px rgba(255,255,255,0.02);
+  }
+
+  /* List view (scrollable) */
+  .list{
+    overflow:auto;
+    padding-right:6px;
+  }
+  .pay-block{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:12px;
+    padding:12px;
+    margin:8px 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
+  .pay-left{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .pay-title{font-weight:700}
+  .pay-meta{font-size:13px;color:var(--muted)}
+  .pay-amount{font-weight:800}
+
+  /* Modal overlay */
+  .overlay{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6));
+    z-index:30;
+    padding:20px;
+  }
+  .overlay.show{display:flex}
+  .modal{
+    width:100%;
+    max-width:520px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:16px;
+    padding:16px;
+    color:var(--text);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal h3{margin:6px 0 10px 0;font-size:18px}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .field{flex:1;display:flex;flex-direction:column;gap:6px}
+  input[type="text"], input[type="number"], input[type="date"], select, textarea{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.06);
+    padding:10px;
+    border-radius:10px;
+    color:var(--text);
+    outline:none;
+    font-size:15px;
+  }
+  textarea{min-height:70px;resize:vertical}
+  .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  .btn{padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted)}
+  .btn.primary{background:var(--accent-blue);color:white}
+
+  /* Day details list inside modal */
+  .day-pay{padding:8px;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:8px}
+
+  /* Responsive tweaks to ensure fit for iPhone 16e viewport */
+  @media (max-width:420px){
+    .cell{width:40px;height:40px}
+    .cell.today{width:56px;height:56px}
+    .top-header{height:62px}
+    .bottom-box{height:92px}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- Top header (static) -->
+  <div class="top-header" id="topHeader">
+    <div class="month-nav">
+      <div class="nav-btn" id="prevMonth" title="Предыдущий месяц">
+        <svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+      </div>
+      <div id="currentMonthLabel" aria-live="polite">Декабрь 2025</div>
+      <div class="nav-btn" id="nextMonth" title="Следующий месяц">
+        <svg viewBox="0 0 24 24"><path d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content area -->
+  <div class="content" id="contentArea">
+    <!-- Weekday labels -->
+    <div class="weekdays" aria-hidden="true">
+      <div>ПН</div><div>ВТ</div><div>СР</div><div>ЧТ</div><div>ПТ</div><div>СБ</div><div>ВС</div>
+    </div>
+
+    <!-- Calendar or List container (tabbed) -->
+    <div id="tabCalendar" style="display:block; flex:1 1 auto;">
+      <div id="calendarContainer" style="display:flex;flex-direction:column;align-items:stretch;gap:8px;height:100%;">
+        <div id="calendarGridWrap" style="flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-start;">
+          <div id="calendarGrid" class="calendar" aria-label="Календарь"></div>
+        </div>
+
+        <div class="add-wrapper">
+          <div class="btn-add" id="btnAdd">Добавить платёж</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabList" style="display:none; flex:1 1 auto; overflow:hidden;">
+      <div style="flex:1 1 auto; display:flex; flex-direction:column; gap:8px; height:100%;">
+        <div class="list" id="listContainer" tabindex="0" style="overflow:auto; padding-right:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom static box (static, same on both tabs) -->
+  <div class="bottom-box">
+    <div class="bottom-inner">
+      <div class="bottom-row" style="justify-content:center;">
+        <!-- Reuse the header label visually here too (it remains static by design) -->
+        <div style="font-weight:700; text-align:center;"> <span id="bottomMonthLabel"></span> </div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="tab-buttons" role="tablist">
+          <div class="tab-button active" id="tabBtnCalendar">Календарь</div>
+          <div class="tab-button" id="tabBtnList">Список</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalContent" role="dialog" aria-modal="true">
+    <!-- dynamic content -->
+  </div>
+</div>
+
+<script>
+/*
+  Точное соответствие ТЗ:
+  - 1 файл index.html
+  - хранилище localStorage
+  - статичная шапка и нижний бокс
+  - календарь: ПН-ВС, даты только цифры
+  - выделение: сегодня - синий круг 1.5x; платежи - красный; заработок - бело-лунный; смешанные - розовый
+  - кнопка добавить платёж 70% ширины, по центру
+  - при клике на дату -> всплывающее окно с платежами этой даты или "До ближайшего платежа X дней"
+  - список вкладка показывает только платежи за месяц в шапке
+  - всё умещается в экран; прокрутка только в списке
+*/
+
+(function(){
+  // Utilities
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+  // DOM refs
+  const currentMonthLabel = $('#currentMonthLabel');
+  const bottomMonthLabel = $('#bottomMonthLabel');
+  const prevBtn = $('#prevMonth');
+  const nextBtn = $('#nextMonth');
+  const calendarGrid = $('#calendarGrid');
+  const btnAdd = $('#btnAdd');
+  const overlay = $('#overlay');
+  const modalContent = $('#modalContent');
+  const tabBtnCalendar = $('#tabBtnCalendar');
+  const tabBtnList = $('#tabBtnList');
+  const tabCalendar = $('#tabCalendar');
+  const tabList = $('#tabList');
+  const listContainer = $('#listContainer');
+
+  // State
+  let viewDate = new Date(); // shows current month/year in header
+  // normalize to first day of month
+  viewDate.setDate(1);
+
+  // localStorage key
+  const STORAGE_KEY = 'mini_payments_v1';
+
+  // payments: array of objects:
+  // { id, title, category, amount, dateISO (yyyy-mm-dd), type: 'payment'|'income', bank, comment }
+  let payments = loadPayments();
+
+  // initialize
+  function init(){
+    // set viewDate to today by default
+    viewDate = new Date();
+    viewDate.setDate(1);
+    renderHeader();
+    computeAndRenderCalendar();
+    renderList();
+    attachEvents();
+    // set bottom label same as header
+    bottomMonthLabel.textContent = formatMonthYear(viewDate);
+  }
+
+  function loadPayments(){
+    try{
+      const data = localStorage.getItem(STORAGE_KEY);
+      if(!data) return [];
+      return JSON.parse(data);
+    }catch(e){
+      console.error('Load payments error', e);
+      return [];
+    }
+  }
+  function savePayments(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payments));
+  }
+
+  function formatMonthYear(d){
+    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    return months[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function isoFromDateObj(d){ // yyyy-mm-dd
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  }
+  function parseISO(iso){ return new Date(iso + 'T00:00:00'); }
+  function fmtShortISO(iso){ // dd.mm.yy (04.12.25)
+    const d = parseISO(iso);
+    return pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + String(d.getFullYear()).slice(-2);
+  }
+
+  function renderHeader(){
+    currentMonthLabel.textContent = formatMonthYear(viewDate);
+    bottomMonthLabel.textContent = formatMonthYear(viewDate);
+  }
+
+  // compute calendar cells and render
+  function computeAndRenderCalendar(){
+    // Clear grid
+    calendarGrid.innerHTML = '';
+
+    // Determine first day of month (weekday Monday=1 .. Sunday=7)
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    let startWeekday = firstOfMonth.getDay(); // Sunday=0..Saturday=6
+    // convert to Monday=1..Sunday=7 index; we need Monday-first
+    startWeekday = (startWeekday === 0) ? 7 : startWeekday; // Sunday -> 7
+    const offset = startWeekday - 1; // how many empty cells before day 1
+
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+
+    // We will render 6 rows x 7 columns = 42 cells (fits all months)
+    const totalCells = 42;
+
+    // Determine today's iso for highlighting blue
+    const today = new Date();
+    const todayISO = isoFromDateObj(today);
+
+    // Precompute payments per date for current month shown in header
+    const monthISO = `${year}-${pad(month+1)}`; // yyyy-mm
+    const paymentsInMonth = payments.filter(p => p.dateISO.startsWith(monthISO));
+
+    // For each day index, create cell
+    for(let i=0;i<totalCells;i++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      // compute date number
+      const dayNumber = i - offset + 1;
+      if(dayNumber < 1 || dayNumber > daysInMonth){
+        cell.classList.add('empty');
+        // keep placeholder for equal spacing
+        calendarGrid.appendChild(cell);
+        continue;
+      }
+      // assign day
+      cell.textContent = String(dayNumber);
+      const thisDate = new Date(year, month, dayNumber);
+      const thisISO = isoFromDateObj(thisDate);
+
+      // find payments for this date
+      const pays = payments.filter(p => p.dateISO === thisISO);
+      // classification for coloring
+      if(pays.length === 0){
+        // plain
+      } else {
+        // detect types
+        const hasPayment = pays.some(p => p.type === 'payment');
+        const hasIncome = pays.some(p => p.type === 'income');
+        if(hasPayment && hasIncome) cell.classList.add('mix');
+        else if(hasIncome) cell.classList.add('income');
+        else cell.classList.add('payment');
+      }
+
+      // today highlight (blue) - must be visible even if also payment -> TЗ says today blue and if same day has payment, today blue wins
+      if(thisISO === todayISO){
+        // ensure today's class overrides other color by reordering classes
+        cell.classList.remove('payment','income','mix');
+        cell.classList.add('today');
+      }
+
+      // styling and click handler
+      cell.dataset.iso = thisISO;
+      cell.addEventListener('click', onDateClick);
+      calendarGrid.appendChild(cell);
+    }
+
+    // Now adjust calendar grid sizing so it fits available vertical space exactly (no vertical scroll)
+    // We need to compute calendar height: total available content area minus weekdays row and add-button area.
+    // We'll compute cell size to fill remaining area.
+    setTimeout(adjustCalendarGridHeight, 0); // after layout
+  }
+
+  function adjustCalendarGridHeight(){
+    // available height for calendar grid area:
+    const contentArea = document.getElementById('contentArea');
+    const rect = contentArea.getBoundingClientRect();
+    // heights of weekdays and add wrapper
+    const weekdays = document.querySelector('.weekdays').getBoundingClientRect().height;
+    const addWrapper = document.querySelector('.add-wrapper').getBoundingClientRect().height;
+    const headerH = document.querySelector('.top-header').getBoundingClientRect().height;
+    const bottomH = document.querySelector('.bottom-box').getBoundingClientRect().height;
+    // total app height (viewport minus safe areas)
+    const appRect = document.getElementById('app').getBoundingClientRect();
+    // available for grid including gap
+    const avail = rect.height - weekdays - addWrapper - 10; // small padding
+    // we have 6 rows (max) => compute ideal cell height including row gap (gap set as 8px)
+    const rows = 6;
+    const gap = 8;
+    const rowHeight = (avail - gap*(rows-1)) / rows;
+    // choose cell size as min of computed and current CSS width to keep circle
+    const cells = document.querySelectorAll('.calendar .cell:not(.empty)');
+    // set cell size
+    const cellSize = Math.max(36, Math.min(70, Math.floor(rowHeight))); // keep between 36 and 70
+    cells.forEach(c => {
+      c.style.width = cellSize + 'px';
+      c.style.height = cellSize + 'px';
+    });
+    // adjust today's size to 1.5x text circle requirement (we made font 20px; circle ~1.5x)
+    const today = document.querySelector('.cell.today');
+    if(today){
+      const sz = cellSize * 1.15; // visual 1.5x of number — adjusted
+      today.style.width = Math.round(sz) + 'px';
+      today.style.height = Math.round(sz) + 'px';
+      today.style.fontSize = '20px';
+    }
+  }
+
+  // handle date click
+  function onDateClick(e){
+    const iso = e.currentTarget.dataset.iso;
+    openDayModal(iso);
+  }
+
+  // open modal showing payments for date or days to nearest payment
+  function openDayModal(iso){
+    const pays = payments.filter(p => p.dateISO === iso);
+    let html = `<h3>День — ${fmtShortISO(iso)}</h3>`;
+    if(pays.length>0){
+      // list payments
+      html += `<div style="max-height:50vh; overflow:auto; padding-right:6px;">`;
+      pays.forEach(p => {
+        html += `<div class="day-pay">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="min-width:0">
+                      <div style="font-weight:800">${escapeHtml(p.title)} ${p.type === 'income' ? '（Заработок）' : ''}</div>
+                      <div style="color:var(--muted);font-size:13px">${escapeHtml(p.category || '')} ${p.bank ? '· ' + escapeHtml(p.bank) : ''}</div>
+                    </div>
+                    <div style="font-weight:900">${p.amount} ₽</div>
+                  </div>
+                  <div style="color:var(--muted);margin-top:6px">${escapeHtml(p.comment || '')}</div>
+                </div>`;
+      });
+      html += `</div>`;
+    } else {
+      // compute nearest payment across all payments (forward/backward)
+      if(payments.length === 0){
+        html += `<div style="color:var(--muted)">Платежей в приложении нет.</div>`;
+      } else {
+        const d0 = parseISO(iso);
+        // compute min days difference (positive forward or backward? TЗ: "до ближайшего платежа X дней" -> days until nearest payment by date. We'll choose next upcoming after this date. If none ahead, show days since last? But spec says "до ближайшего платежа X дней" -> we'll show days until next payment in future.)
+        const futurePayments = payments
+          .map(p => ({...p, dateObj: parseISO(p.dateISO)}))
+          .filter(p => p.dateObj.getTime() > d0.getTime())
+          .sort((a,b)=>a.dateObj - b.dateObj);
+
+        if(futurePayments.length>0){
+          const next = futurePayments[0];
+          const diffDays = Math.ceil((next.dateObj - d0)/(1000*60*60*24));
+          html += `<div style="color:var(--muted)">До ближайшего платежа: <strong>${diffDays} ${declOfNum(diffDays,['день','дня','дней'])}</strong> (${fmtShortISO(next.dateISO)} — ${escapeHtml(next.title)} ${next.amount} ₽).</div>`;
+        } else {
+          // no future payments in timeline -> show days since last payment (past)
+          const pastPayments = payments
+            .map(p => ({...p, dateObj: parseISO(p.dateISO)}))
+            .filter(p => p.dateObj.getTime() < d0.getTime())
+            .sort((a,b)=>b.dateObj - a.dateObj);
+          if(pastPayments.length>0){
+            const last = pastPayments[0];
+            const diffDays = Math.ceil((d0 - last.dateObj)/(1000*60*60*24));
+            html += `<div style="color:var(--muted)">Ближайший платёж был <strong>${diffDays} ${declOfNum(diffDays,['день','дня','дней'])}</strong> назад (${fmtShortISO(last.dateISO)} — ${escapeHtml(last.title)} ${last.amount} ₽).</div>`;
+          } else {
+            html += `<div style="color:var(--muted)">Нет информации о ближайших платежах.</div>`;
+          }
+        }
+      }
+    }
+
+    html += `<div class="modal actions" style="margin-top:14px; padding:0;">
+      <button class="btn secondary" id="closeDay">Закрыть</button>
+      <button class="btn primary" id="addFromDay">Добавить платёж на эту дату</button>
+    </div>`;
+
+    modalContent.innerHTML = html;
+    overlay.classList.add('show');
+
+    $('#closeDay').addEventListener('click', ()=>{ overlay.classList.remove('show'); });
+    $('#addFromDay').addEventListener('click', ()=>{
+      overlay.classList.remove('show');
+      openAddModal(iso);
+    });
+  }
+
+  // open modal to add payment; if iso provided prefill date
+  function openAddModal(prefillIso){
+    const isoPref = prefillIso || isoFromDateObj(new Date());
+    // modal form
+    const html = `<h3>Добавить платёж / доход</h3>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <div style="flex:1;">
+          <label style="font-size:13px;color:var(--muted);margin-bottom:6px;display:block">Тип</label>
+          <div style="display:flex;gap:8px;">
+            <button id="typePayment" class="btn secondary" style="flex:1;border-radius:10px;">Ежемесячный платеж</button>
+            <button id="typeIncome" class="btn secondary" style="flex:1;border-radius:10px;">Заработок</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>Название</label><input type="text" id="fldTitle" placeholder="Например: Теле2"></div>
+        <div class="field" style="max-width:140px"><label>Сумма, ₽</label><input type="number" id="fldAmount" placeholder="750"></div>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>Категория</label>
+          <select id="fldCategory">
+            <option value="Мобильная связь">Мобильная связь</option>
+            <option value="Ипотека">Ипотека</option>
+            <option value="Подписки">Подписки</option>
+            <option value="Платёж по кредиту">Платёж по кредиту</option>
+            <option value="Коммуналка">Коммуналка</option>
+            <option value="Другое">Другое</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:220px"><label>Дата</label><input type="date" id="fldDate" value="${isoPref}"></div>
+      </div>
+
+      <div id="incomeExtra" style="display:none; margin-bottom:8px;">
+        <div class="row">
+          <div class="field"><label>Комментарий (обязательно)</label><textarea id="fldComment" placeholder="Комментарий..."></textarea></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Банк (вручную)</label><input type="text" id="fldBank" placeholder="Название банка"></div>
+        </div>
+      </div>
+
+      <div class="modal actions">
+        <button class="btn secondary" id="cancelAdd">Отменить</button>
+        <button class="btn primary" id="saveAdd">Сохранить</button>
+      </div>`;
+
+    modalContent.innerHTML = html;
+    overlay.classList.add('show');
+
+    // default type = payment
+    let type = 'payment';
+    const typePaymentBtn = $('#typePayment');
+    const typeIncomeBtn = $('#typeIncome');
+    const incomeExtra = $('#incomeExtra');
+    setActiveTypeButtons();
+
+    typePaymentBtn.addEventListener('click', ()=>{ type = 'payment'; setActiveTypeButtons(); });
+    typeIncomeBtn.addEventListener('click', ()=>{ type = 'income'; setActiveTypeButtons(); });
+
+    function setActiveTypeButtons(){
+      if(type === 'payment'){
+        typePaymentBtn.classList.add('primary'); typePaymentBtn.classList.remove('secondary');
+        typeIncomeBtn.classList.add('secondary'); typeIncomeBtn.classList.remove('primary');
+        incomeExtra.style.display = 'none';
+      } else {
+        typePaymentBtn.classList.remove('secondary'); typePaymentBtn.classList.remove('primary');
+        typeIncomeBtn.classList.add('primary'); typeIncomeBtn.classList.remove('secondary');
+        incomeExtra.style.display = 'block';
+      }
+    }
+
+    $('#cancelAdd').addEventListener('click', ()=> overlay.classList.remove('show'));
+    $('#saveAdd').addEventListener('click', ()=>{
+      const title = ($('#fldTitle').value || '').trim();
+      const amount = Number($('#fldAmount').value || 0);
+      const dateISO = $('#fldDate').value;
+      const category = $('#fldCategory').value;
+      const comment = ($('#fldComment') ? $('#fldComment').value.trim() : '') || '';
+      const bank = ($('#fldBank') ? $('#fldBank').value.trim() : '') || '';
+
+      // Validation
+      if(!title){
+        alert('Введите название платежа.');
+        return;
+      }
+      if(!dateISO){
+        alert('Выберите дату.');
+        return;
+      }
+      if(type === 'income' && !comment){
+        alert('Комментарий обязателен для типа "Заработок".');
+        return;
+      }
+      const newPay = {
+        id: 'p' + Date.now(),
+        title,
+        category,
+        amount: amount || 0,
+        dateISO,
+        type: type,
+        bank,
+        comment
+      };
+      payments.push(newPay);
+      savePayments();
+      overlay.classList.remove('show');
+      renderAfterChange();
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m] });
+  }
+
+  // render list for current month
+  function renderList(){
+    listContainer.innerHTML = '';
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const monthISO = `${year}-${pad(month+1)}`; // yyyy-mm
+    const pays = payments
+      .filter(p => p.dateISO.startsWith(monthISO))
+      .sort((a,b)=> parseISO(a.dateISO) - parseISO(b.dateISO));
+
+    if(pays.length === 0){
+      listContainer.innerHTML = `<div style="color:var(--muted); padding:8px;">Платежи за ${formatMonthYear(viewDate)} отсутствуют.</div>`;
+      return;
+    }
+
+    pays.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'pay-block';
+      el.innerHTML = `<div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:56px;height:56px;border-radius:10px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-weight:800;">${pad(new Date(p.dateISO).getDate())}</div>
+          <div style="min-width:0">
+            <div class="pay-title">${escapeHtml(p.title)}</div>
+            <div class="pay-meta">${escapeHtml(p.category || '')} · ${fmtShortISO(p.dateISO)}</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="pay-amount">${p.amount} ₽</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:6px">${p.type === 'income' ? 'Заработок' : 'Платеж'}</div>
+        </div>`;
+      // Attach click to open details
+      el.addEventListener('click', ()=> openDayModal(p.dateISO));
+      listContainer.appendChild(el);
+    });
+  }
+
+  // change month navigation
+  prevBtn.addEventListener('click', ()=>{
+    viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth()-1, 1);
+    renderHeader();
+    computeAndRenderCalendar();
+    renderList();
+  });
+  nextBtn.addEventListener('click', ()=>{
+    viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth()+1, 1);
+    renderHeader();
+    computeAndRenderCalendar();
+    renderList();
+  });
+
+  // add payment button
+  btnAdd.addEventListener('click', ()=> openAddModal());
+
+  // tab switches
+  tabBtnCalendar.addEventListener('click', ()=>{
+    tabBtnCalendar.classList.add('active');
+    tabBtnList.classList.remove('active');
+    tabCalendar.style.display = 'block';
+    tabList.style.display = 'none';
+  });
+  tabBtnList.addEventListener('click', ()=>{
+    tabBtnList.classList.add('active');
+    tabBtnCalendar.classList.remove('active');
+    tabList.style.display = 'block';
+    tabCalendar.style.display = 'none';
+  });
+
+  // close overlay on background click
+  overlay.addEventListener('click', (e)=>{
+    if(e.target === overlay){
+      overlay.classList.remove('show');
+    }
+  });
+
+  // helper to re-render after data changes
+  function renderAfterChange(){
+    computeAndRenderCalendar();
+    renderList();
+  }
+
+  // declension util
+  function declOfNum(n, titles) {
+    // Russian declension for "день"
+    n = Math.abs(n) % 100;
+    const n1 = n % 10;
+    if (n > 10 && n < 20) return titles[2];
+    if (n1 > 1 && n1 < 5) return titles[1];
+    if (n1 == 1) return titles[0];
+    return titles[2];
+  }
+
+  // expose openAddModal for prefill from day modal
+  window.openAddModal = openAddModal;
+
+  // small security: prevent zoom double-tap on iOS
+  document.addEventListener('touchstart', function(){}, {passive:true});
+
+  // init app
+  init();
+
+  // ensure reflow on orientation change
+  window.addEventListener('resize', adjustCalendarGridHeight);
+
+})();
+</script>
+</body>
+</html>
