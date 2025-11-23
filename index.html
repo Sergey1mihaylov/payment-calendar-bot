@@ -1,1 +1,690 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Платежный календарь — mini app</title>
+<style>
+  :root{
+    --bg1:#000004;
+    --bg2:#041022;
+    --accent-blue:#0A84FF;
+    --accent-red:#FF3B30;
+    --accent-income:#EDEFF6;
+    --accent-mix:#FF9AB3;
+    --card-bg: rgba(255,255,255,0.03);
+    --glass: rgba(255,255,255,0.04);
+    --text:#E6E6E6;
+    --muted:#B7B7BF;
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
 
+    /* sizing увеличено на 20% */
+    --cell-size: 36px;      /* base day diameter */
+    --cell-gap: 7.2px;      /* gap between cells */
+    --today-mult: 1.5;      /* today circle multiplier */
+    --weekdays-scale: 1.05; /* weekdays area increased by 5% */
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Helvetica Neue", Arial;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    -webkit-font-smoothing:antialiased;
+    -webkit-text-size-adjust:100%;
+    box-sizing:border-box;
+    background: var(--bg1);
+    color:var(--text);
+  }
+  *{box-sizing:inherit}
+
+  body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(400px 220px at 15% 20%, rgba(10,120,255,0.45), transparent 20%),
+      radial-gradient(260px 160px at 70% 70%, rgba(255,120,30,0.30), transparent 18%),
+      radial-gradient(180px 120px at 45% 50%, rgba(0,80,200,0.18), transparent 18%),
+      radial-gradient(120px 90px at 80% 25%, rgba(255,160,40,0.12), transparent 20%),
+      linear-gradient(180deg, var(--bg2) 0%, #000000 100%);
+    filter: blur(36px) saturate(120%);
+    opacity:0.95;
+  }
+
+  .app{
+    position:relative;
+    z-index:1;
+    height: calc(100vh - var(--safe-top) - var(--safe-bottom));
+    padding-top: calc(var(--safe-top) + 10px);
+    padding-bottom: calc(var(--safe-bottom) + 12px);
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:center;
+  }
+
+  .top-header{
+    height:64px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    user-select:none;
+    flex-shrink:0;
+    width: calc(var(--cell-size) * 7 + var(--cell-gap) * 6);
+  }
+  .month-nav{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    font-size:21.6px;
+    font-weight:600;
+    padding:0 12px;
+  }
+  .nav-btn{
+    width:52.8px;
+    height:52.8px;
+    border-radius:26.4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.03);
+    cursor:pointer;
+  }
+  .nav-btn svg{width:21.6px; height:21.6px; fill:var(--text);}
+
+  .content{
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    padding:0 12px;
+    overflow:hidden;
+    width: calc(var(--cell-size) * 7 + var(--cell-gap) * 6);
+  }
+
+  .weekdays-wrap{
+    width: 100%;
+    margin: 0 auto;
+    display:block;
+    transform: scaleY(var(--weekdays-scale));
+    transform-origin: center top;
+  }
+  .weekdays{
+    display:grid;
+    grid-template-columns: repeat(7, var(--cell-size));
+    column-gap: var(--cell-gap);
+    width:100%;
+    text-align:center;
+    font-size:15.6px;
+    color:var(--muted);
+    user-select:none;
+    padding:6px 2px;
+  }
+
+  .calendar-wrap{
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    width:100%;
+  }
+  .calendar{
+    display:grid;
+    grid-template-columns: repeat(7, var(--cell-size));
+    column-gap: var(--cell-gap);
+    row-gap: var(--cell-gap);
+    width: 100%;
+    margin: 0 auto;
+    grid-auto-rows: var(--cell-size);
+    justify-content:center;
+    align-items:center;
+  }
+
+  .cell{
+    width:var(--cell-size);
+    height:var(--cell-size);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:19.2px;
+    color:var(--text);
+    border-radius:50%;
+    user-select:none;
+    cursor:pointer;
+    position:relative;
+    transition: transform .12s ease, box-shadow .12s ease;
+    justify-self:center;
+    align-self:center;
+  }
+  .cell.empty{visibility:hidden; pointer-events:none;}
+
+  .cell:hover{ transform: translateY(-4px); }
+
+  .cell.today{
+    background:var(--accent-blue);
+    width: calc(var(--cell-size) * var(--today-mult));
+    height: calc(var(--cell-size) * var(--today-mult));
+    font-size:19.2px;
+    box-shadow: 0 8px 26px rgba(10,132,255,0.22);
+    justify-self:center;
+    align-self:center;
+  }
+
+  .cell.payment{
+    background:var(--accent-red);
+    box-shadow: 0 4px 12px rgba(255,59,48,0.18);
+  }
+
+  .cell.income{
+    background:linear-gradient(180deg, var(--accent-income), #F6F7FB);
+    color:#101018;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+  }
+
+  .cell.mix{
+    background:var(--accent-mix);
+    box-shadow: 0 4px 10px rgba(255,154,179,0.12);
+  }
+
+  .add-wrapper{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    margin-top:6px;
+    margin-bottom:6px;
+  }
+  .btn-add{
+    width:70%;
+    max-width:420px;
+    border-radius:14px;
+    background:linear-gradient(180deg,var(--accent-blue), #0066d6);
+    color:white;
+    font-weight:700;
+    padding:10px 14px;
+    text-align:center;
+    font-size:16px;
+    cursor:pointer;
+    box-shadow: 0 8px 30px rgba(10,132,255,0.18);
+  }
+
+  .bottom-box{
+    height:86px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    background:transparent;
+    flex-shrink:0;
+    position:relative;
+  }
+  .bottom-inner{
+    width:100%;
+    max-width:900px;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    padding:0 12px;
+  }
+  .bottom-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .tab-buttons{
+    display:flex;
+    gap:8px;
+    background:var(--card-bg);
+    padding:6px;
+    border-radius:12px;
+    width:100%;
+    justify-content:center;
+  }
+  .tab-button{
+    flex:1;
+    padding:10px 6px;
+    border-radius:10px;
+    text-align:center;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--muted);
+  }
+  .tab-button.active{
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    color:var(--text);
+    box-shadow: inset 0 -1px rgba(255,255,255,0.02);
+  }
+
+  .list{
+    overflow:auto;
+    padding-right:6px;
+  }
+  .pay-block{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:12px;
+    padding:10px;
+    margin:8px 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
+
+  .overlay{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8));
+    z-index:60;
+    padding:20px;
+  }
+  .overlay.show{display:flex}
+  .modal{
+    width:100%;
+    max-width:560px;
+    background: linear-gradient(180deg,#04102a 0%, #000004 100%);
+    border-radius:16px;
+    padding:16px;
+    color:var(--text);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    overflow:hidden;
+  }
+  .modal h3{margin:6px 0 12px 0;font-size:18px}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+  .field{flex:1;display:flex;flex-direction:column;gap:6px;min-width:120px}
+  .field.small{max-width:150px;flex:0 1 150px}
+  input[type="text"], input[type="number"], input[type="date"], select, textarea{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.06);
+    padding:10px;
+    border-radius:10px;
+    color:var(--text);
+    outline:none;
+    font-size:15px;
+    width:100%;
+    box-sizing:border-box;
+  }
+  textarea{min-height:70px;resize:vertical}
+  .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+  .btn{padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted)}
+  .btn.primary{background:var(--accent-blue);color:white}
+
+  .day-pay{padding:8px;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:8px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+  .del-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:6px 8px;border-radius:8px;cursor:pointer;font-weight:700}
+
+  @media (max-width:420px){
+    :root{ --cell-size: 33.6px; --cell-gap: 6.72px; }
+    .top-header{height:62px; width: calc(var(--cell-size) * 7 + var(--cell-gap) * 6);}
+    .bottom-box{height:92px}
+    .month-nav{font-size:18px;}
+    .nav-btn{width:44px; height:44px; border-radius:22px;}
+    .nav-btn svg{width:18px; height:18px;}
+    .weekdays{font-size:13px;}
+    .cell{font-size:16px;}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="top-header">
+    <div class="month-nav" role="heading" aria-level="1">
+      <div class="nav-btn" id="prevMonth" title="Предыдущий месяц" tabindex="0" role="button" aria-label="Предыдущий месяц">
+        <svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+      </div>
+      <div id="currentMonthLabel" aria-live="polite" style="min-width:140px; text-align:center;">Декабрь 2025</div>
+      <div class="nav-btn" id="nextMonth" title="Следующий месяц" tabindex="0" role="button" aria-label="Следующий месяц">
+        <svg viewBox="0 0 24 24"><path d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="content" id="contentArea">
+    <div class="weekdays-wrap" aria-hidden="true">
+      <div class="weekdays">
+        <div>ПН</div><div>ВТ</div><div>СР</div><div>ЧТ</div><div>ПТ</div><div>СБ</div><div>ВС</div>
+      </div>
+    </div>
+
+    <div id="tabCalendar" style="display:block; flex:1 1 auto;">
+      <div style="display:flex;flex-direction:column;align-items:stretch;gap:8px;height:100%;">
+        <div class="calendar-wrap" style="flex:1 1 auto;">
+          <div id="calendarGrid" class="calendar" aria-label="Календарь"></div>
+        </div>
+
+        <div class="add-wrapper">
+          <div class="btn-add" id="btnAdd" tabindex="0" role="button" aria-label="Добавить платёж">Добавить платёж</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabList" style="display:none; flex:1 1 auto; overflow:hidden;">
+      <div style="flex:1 1 auto; display:flex; flex-direction:column; gap:8px; height:100%;">
+        <div class="list" id="listContainer" tabindex="0" style="overflow:auto; padding-right:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-box">
+    <div class="bottom-inner">
+      <div class="bottom-row" style="justify-content:center;">
+        <div style="font-weight:700; text-align:center;"> <span id="bottomMonthLabel"></span> </div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="tab-buttons" role="tablist">
+          <div class="tab-button active" id="tabBtnCalendar" role="tab" tabindex="0" aria-selected="true" aria-controls="tabCalendar">Календарь</div>
+          <div class="tab-button" id="tabBtnList" role="tab" tabindex="-1" aria-selected="false" aria-controls="tabList">Список</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+
+  const currentMonthLabel = $('#currentMonthLabel');
+  const bottomMonthLabel = $('#bottomMonthLabel');
+  const prevBtn = $('#prevMonth');
+  const nextBtn = $('#nextMonth');
+  const calendarGrid = $('#calendarGrid');
+  const btnAdd = $('#btnAdd');
+  const overlay = $('#overlay');
+  const modalContent = $('#modalContent');
+  const tabBtnCalendar = $('#tabBtnCalendar');
+  const tabBtnList = $('#tabBtnList');
+  const tabCalendar = $('#tabCalendar');
+  const tabList = $('#tabList');
+  const listContainer = $('#listContainer');
+
+  let viewDate = new Date();
+  viewDate.setDate(1);
+
+  const STORAGE_KEY = 'mini_payments_v1';
+  let payments = loadPayments();
+
+  function loadPayments(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch(e){ console.error(e); return []; }
+  }
+  function savePayments(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(payments)); }
+
+  function formatMonthYear(d){
+    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    return months[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function isoFromDateObj(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+  function parseISO(iso){ return new Date(iso + 'T00:00:00'); }
+  function fmtShortISO(iso){ const d = parseISO(iso); return pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + String(d.getFullYear()).slice(-2); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m}[m])); }
+  
+  function buildCalendar(){
+    calendarGrid.innerHTML = '';
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+
+    // День недели первого числа (Пн=1,...Вс=7)
+    // В JS Воскресенье = 0, понедельник=1, ... воскресенье=0
+    // Нам нужно, чтобы понедельник был 0 для смещения (т.е. 0-6)
+    let startWeekDay = firstDay.getDay() - 1;
+    if(startWeekDay < 0) startWeekDay = 6;
+
+    // Вставляем пустые клетки для смещения
+    for(let i=0; i<startWeekDay; i++){
+      const emptyCell = document.createElement('div');
+      emptyCell.classList.add('cell','empty');
+      calendarGrid.appendChild(emptyCell);
+    }
+
+    // Добавляем дни месяца
+    for(let day=1; day<=daysInMonth; day++){
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      const cellDate = new Date(year, month, day);
+      cell.textContent = day;
+
+      // Проверяем если сегодня
+      const now = new Date();
+      if(now.getFullYear() === year && now.getMonth() === month && now.getDate() === day){
+        cell.classList.add('today');
+      }
+
+      // Проверяем есть ли платежи на эту дату
+      const isoDate = isoFromDateObj(cellDate);
+      const dayPayments = payments.filter(p => p.date === isoDate);
+      if(dayPayments.length > 0){
+        // Если есть хоть один платеж - выделяем цветом
+        let hasPayment = dayPayments.some(p => p.type === 'payment');
+        let hasIncome = dayPayments.some(p => p.type === 'income');
+        if(hasPayment && hasIncome) cell.classList.add('mix');
+        else if(hasPayment) cell.classList.add('payment');
+        else if(hasIncome) cell.classList.add('income');
+      }
+
+      // Клик по дню
+      cell.addEventListener('click', () => {
+        openDayModal(isoDate);
+      });
+
+      calendarGrid.appendChild(cell);
+    }
+  }
+
+  function updateLabels(){
+    currentMonthLabel.textContent = formatMonthYear(viewDate);
+    bottomMonthLabel.textContent = formatMonthYear(viewDate);
+  }
+
+  function openDayModal(dateIso){
+    const dayPayments = payments.filter(p => p.date === dateIso);
+    modalContent.innerHTML = `<h3>Платежи за ${fmtShortISO(dateIso)}</h3>`;
+    if(dayPayments.length === 0){
+      modalContent.innerHTML += `<p>Нет платежей.</p>`;
+    } else {
+      dayPayments.forEach((p,i) => {
+        modalContent.innerHTML += `
+          <div class="day-pay">
+            <div><strong>${escapeHtml(p.name)}</strong> — ${escapeHtml(p.amount)} ₽</div>
+            <button class="del-btn" data-index="${i}">Удалить</button>
+          </div>`;
+      });
+    }
+    modalContent.innerHTML += `
+      <div class="modal-actions">
+        <button class="btn secondary" id="closeModalBtn">Закрыть</button>
+        <button class="btn primary" id="addNewPayBtn">Добавить платеж</button>
+      </div>`;
+
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+
+    // Удалить платеж
+    modalContent.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = +btn.getAttribute('data-index');
+        const globalIdx = payments.findIndex(p => p.date === dateIso && payments.indexOf(p) === idx);
+        if(globalIdx >= 0){
+          payments.splice(globalIdx,1);
+          savePayments();
+          buildCalendar();
+          openDayModal(dateIso);
+          updateList();
+        }
+      });
+    });
+
+    $('#closeModalBtn').addEventListener('click', closeModal);
+    $('#addNewPayBtn').addEventListener('click', () => {
+      closeModal();
+      openAddModal(dateIso);
+    });
+  }
+
+  function closeModal(){
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+    modalContent.innerHTML = '';
+  }
+
+  function openAddModal(dateIso = null){
+    modalContent.innerHTML = `
+      <h3>${dateIso ? 'Добавить платеж за ' + fmtShortISO(dateIso) : 'Добавить платеж'}</h3>
+      <div class="row">
+        <div class="field small">
+          <label for="payDate">Дата</label>
+          <input type="date" id="payDate" value="${dateIso ? dateIso : isoFromDateObj(new Date())}">
+        </div>
+        <div class="field">
+          <label for="payName">Название</label>
+          <input type="text" id="payName" placeholder="Описание платежа">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field small">
+          <label for="payAmount">Сумма (₽)</label>
+          <input type="number" id="payAmount" placeholder="0" min="0" step="0.01">
+        </div>
+        <div class="field small">
+          <label for="payType">Тип</label>
+          <select id="payType">
+            <option value="payment">Расход</option>
+            <option value="income">Доход</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary" id="cancelAddBtn">Отмена</button>
+        <button class="btn primary" id="saveAddBtn">Сохранить</button>
+      </div>
+    `;
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+
+    $('#cancelAddBtn').addEventListener('click', closeModal);
+    $('#saveAddBtn').addEventListener('click', () => {
+      const dateVal = $('#payDate').value;
+      const nameVal = $('#payName').value.trim();
+      const amountVal = parseFloat($('#payAmount').value);
+      const typeVal = $('#payType').value;
+
+      if(!dateVal || !nameVal || isNaN(amountVal) || amountVal <= 0){
+        alert('Заполните корректно все поля');
+        return;
+      }
+
+      payments.push({
+        date: dateVal,
+        name: nameVal,
+        amount: amountVal.toFixed(2),
+        type: typeVal
+      });
+      savePayments();
+      buildCalendar();
+      updateList();
+      closeModal();
+    });
+  }
+
+  function updateList(){
+    listContainer.innerHTML = '';
+    if(payments.length === 0){
+      listContainer.innerHTML = '<p>Нет платежей.</p>';
+      return;
+    }
+    const sorted = [...payments].sort((a,b) => (a.date > b.date) ? 1 : (a.date < b.date) ? -1 : 0);
+    let currentDate = null;
+    sorted.forEach(p => {
+      if(p.date !== currentDate){
+        currentDate = p.date;
+        const header = document.createElement('h4');
+        header.textContent = `Дата: ${fmtShortISO(currentDate)}`;
+        listContainer.appendChild(header);
+      }
+      const block = document.createElement('div');
+      block.classList.add('pay-block');
+      block.innerHTML = `<div><strong>${escapeHtml(p.name)}</strong> — ${escapeHtml(p.amount)} ₽ (${p.type === 'payment' ? 'Расход' : 'Доход'})</div>
+        <button class="del-btn" title="Удалить">×</button>`;
+      block.querySelector('button').addEventListener('click', () => {
+        const idx = payments.indexOf(p);
+        if(idx >= 0){
+          payments.splice(idx,1);
+          savePayments();
+          buildCalendar();
+          updateList();
+        }
+      });
+      listContainer.appendChild(block);
+    });
+  }
+
+  prevBtn.addEventListener('click', () => {
+    viewDate.setMonth(viewDate.getMonth() - 1);
+    updateLabels();
+    buildCalendar();
+    updateList();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    viewDate.setMonth(viewDate.getMonth() + 1);
+    updateLabels();
+    buildCalendar();
+    updateList();
+  });
+
+  btnAdd.addEventListener('click', () => openAddModal());
+
+  tabBtnCalendar.addEventListener('click', () => {
+    tabBtnCalendar.classList.add('active');
+    tabBtnCalendar.setAttribute('aria-selected', 'true');
+    tabBtnCalendar.setAttribute('tabindex', '0');
+    tabBtnList.classList.remove('active');
+    tabBtnList.setAttribute('aria-selected', 'false');
+    tabBtnList.setAttribute('tabindex', '-1');
+    tabCalendar.style.display = 'block';
+    tabList.style.display = 'none';
+  });
+
+  tabBtnList.addEventListener('click', () => {
+    tabBtnList.classList.add('active');
+    tabBtnList.setAttribute('aria-selected', 'true');
+    tabBtnList.setAttribute('tabindex', '0');
+    tabBtnCalendar.classList.remove('active');
+    tabBtnCalendar.setAttribute('aria-selected', 'false');
+    tabBtnCalendar.setAttribute('tabindex', '-1');
+    tabList.style.display = 'block';
+    tabCalendar.style.display = 'none';
+  });
+
+  overlay.addEventListener('click', e => {
+    if(e.target === overlay){
+      closeModal();
+    }
+  });
+
+  updateLabels();
+  buildCalendar();
+  updateList();
+})();
+</script>
+</body>
+</html>
